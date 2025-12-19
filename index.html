@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poker Lobby (localStorage)</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --muted:#91a0c7; --text:#e7ecff;
+      --good:#2ecc71; --bad:#ff5a5f; --warn:#f1c40f; --line:#243055;
+      --btn:#2d3cff; --btn2:#1f2aa8;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial;
+      background: radial-gradient(1200px 700px at 20% 10%, #1b2552 0%, var(--bg) 55%);
+      color:var(--text);
+    }
+    .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+    .top{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .brand{display:flex;gap:10px;align-items:center}
+    .dot{width:12px;height:12px;border-radius:50%;background:var(--good);box-shadow:0 0 18px rgba(46,204,113,.6)}
+    .title{font-weight:800;font-size:18px}
+    .sub{color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+    @media (max-width: 860px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px; padding:16px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.25);
+    }
+    .card h2{margin:0 0 10px 0;font-size:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input, select{
+      width:100%; padding:11px 12px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.18); color:var(--text);
+      outline:none;
+    }
+    input:focus{border-color:rgba(45,60,255,.7); box-shadow:0 0 0 3px rgba(45,60,255,.18)}
+    .btn{
+      background:linear-gradient(180deg, var(--btn), var(--btn2));
+      border:none; color:white; padding:11px 12px; border-radius:12px;
+      cursor:pointer; font-weight:700;
+    }
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .btn.secondary{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10)}
+    .btn.danger{background:rgba(255,90,95,.18); border:1px solid rgba(255,90,95,.35)}
+    .btn.warn{background:rgba(241,196,15,.18); border:1px solid rgba(241,196,15,.35)}
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.16); color:var(--muted); font-size:12px
+    }
+    .list{margin-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+    .p{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr .8fr .8fr auto;
+      gap:10px; padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      align-items:center;
+    }
+    @media (max-width: 860px){
+      .p{grid-template-columns:1fr 1fr; gap:8px}
+      .p .actions{grid-column:1 / -1; display:flex; gap:10px; justify-content:flex-end}
+    }
+    .muted{color:var(--muted)}
+    .money{font-variant-numeric:tabular-nums}
+    .pos{color:var(--good); font-weight:800}
+    .neg{color:var(--bad); font-weight:800}
+    .zero{color:var(--warn); font-weight:800}
+    .hr{height:1px;background:rgba(255,255,255,.08);margin:12px 0}
+    .small{font-size:12px;color:var(--muted)}
+    .rank-item{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 0; border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .toast{
+      position:fixed; right:14px; bottom:14px;
+      background:rgba(18,26,51,.95); border:1px solid rgba(255,255,255,.12);
+      padding:10px 12px; border-radius:14px; color:var(--text);
+      max-width:340px; box-shadow:0 12px 30px rgba(0,0,0,.35);
+      opacity:0; transform:translateY(8px);
+      transition:.18s ease;
+      pointer-events:none;
+    }
+    .toast.show{opacity:1; transform:translateY(0)}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.10);
+      padding:2px 6px; border-radius:8px; font-size:12px; color:var(--muted);
+    }
+    /* ===== MOBILE OPTIMIZATION ===== */
+  @media (max-width: 600px) {
+
+    .wrap {
+      margin: 16px auto;
+      padding: 0 12px;
+    }
+
+    .top {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .title {
+      font-size: 16px;
+    }
+
+    .sub {
+      font-size: 12px;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      padding: 14px;
+      border-radius: 16px;
+    }
+
+    .card h2 {
+      font-size: 15px;
+    }
+
+    label {
+      font-size: 11px;
+    }
+
+    input, select {
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    .row {
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 5px 8px;
+    }
+
+    /* PARTICIPANTES */
+    .p {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .p .money {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .p .actions {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+    }
+
+    .p .actions .btn {
+      flex: 1;
+    }
+
+    /* RANKING */
+    .rank-item {
+      font-size: 14px;
+    }
+
+    /* HISTÓRICO */
+    #history .pill {
+      margin-top: 6px;
+    }
+
+    /* TOAST */
+    .toast {
+      right: 10px;
+      left: 10px;
+      max-width: unset;
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          <div class="title">Poker Lobby</div>
+          <div class="sub">Owner: <span class="kbd">@vinicastrolima</span></div>
+          <!-- <div class="sub">Salva no <span class="kbd">localStorage</span> (não precisa backend)</div> -->
+        </div>
+      </div>
+      <div class="row">
+        <div class="pill" id="tableStatus">Sem mesa ativa</div>
+        <button class="btn secondary" id="btnReset">Limpar dados</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- ESQUERDA: CONTROLES -->
+      <div class="card">
+        <h2>Mesa</h2>
+
+        <label>Nome da mesa</label>
+        <input id="tableName" placeholder="Ex: Home Game - Sexta" />
+
+        <div class="row">
+          <div style="flex:1">
+            <label>Moeda (fixo em BRL)</label>
+            <select id="currency" disabled>
+              <option value="BRL">BRL (R$)</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label>Unidade (fixo em Dinheiro)</label>
+            <select id="unit" disabled>
+              <option value="money">Dinheiro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnStart">Iniciar / Retomar</button>
+          <button class="btn warn" id="btnCloseTable">Encerrar mesa</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <h2>Adicionar participante</h2>
+        <label>Nome</label>
+        <input id="playerName" placeholder="Ex: Vini" />
+        <label>Entrada (buy-in)</label>
+        <input id="playerBuyin" type="number" min="0" step="0.01" placeholder="Ex: 100" />
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnAddPlayer">Adicionar</button>
+        </div>
+
+        <div class="hr"></div>
+        <div class="small">
+          Dica: para sair da mesa, clique em <b>Sair</b> no jogador e informe quanto ele terminou.<br/>
+          Se encerrar a mesa, ele fecha todos os que ainda estão “ativos”.
+        </div>
+      </div>
+
+      <!-- DIREITA: RANKING -->
+      <div class="card">
+        <h2>Ranking (lucro/prejuízo)</h2>
+        <div class="small" id="rankHint">Inicie uma mesa e registre saídas para ver o ranking.</div>
+        <div id="ranking"></div>
+
+        <div class="hr"></div>
+        <h2>Acertos finais</h2>
+        <div id="settlements"></div>
+
+        <div class="hr"></div>
+        <h2>Resumo</h2>
+        <div class="small" id="summary">—</div>
+      </div>
+    </div>
+
+    <!-- LISTA PARTICIPANTES -->
+    <div class="card" style="margin-top:14px">
+      <h2>Participantes</h2>
+      <div class="small muted">Ativos aparecem primeiro. Tudo fica salvo no navegador.</div>
+
+      <div class="list" id="playersList"></div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="card" style="margin-top:14px">
+      <h2>Histórico de mesas encerradas</h2>
+      <div class="small muted">Cada encerramento salva um snapshot com ranking.</div>
+      <div id="history"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ======= CONFIG =======
+  const STORAGE_KEY = "poker_lobby_v1";
+
+  // ======= STATE =======
+  const state = loadState() ?? {
+    activeTable: null,     // { id, name, currency, unit, createdAt, closedAt:null }
+    players: [],           // [{ id, name, buyins:[{amount, at}], out:null|{final, at}, note }]
+    history: [],           // [{ table, playersSnapshot, ranking, settlements, closedAt }]
+    lastRanking: null,
+    lastSettlements: null
+  };
+
+  // ======= HELPERS =======
+  const $ = (id) => document.getElementById(id);
+  const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+
+  const fmtMoney = (val, currency="BRL") => {
+    const v = Number(val || 0);
+    try {
+      return new Intl.NumberFormat("pt-BR", { style:"currency", currency }).format(v);
+    } catch {
+      return "R$ " + v.toFixed(2);
+    }
+  };
+
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch{ return null; }
+  }
+
+  function ensureActiveTable(){
+    if(!state.activeTable) throw new Error("Sem mesa ativa. Clique em Iniciar / Retomar.");
+  }
+
+  function totalBuyin(player){
+    return (player.buyins || []).reduce((acc, b)=>acc + Number(b.amount||0), 0);
+  }
+
+  function profit(player){
+    // lucro = final - total buy-in
+    if(!player.out) return null;
+    return Number(player.out.final||0) - totalBuyin(player);
+  }
+
+  // ======= SETTLEMENTS (quem paga quem) =======
+  function calculateSettlements(players){
+    const winners = [];
+    const losers = [];
+
+    players.forEach(p => {
+      if(!p.out) return;
+      const diff = profit(p);
+      if(diff > 0) winners.push({ name: p.name, value: diff });
+      if(diff < 0) losers.push({ name: p.name, value: Math.abs(diff) });
+    });
+
+    const result = [];
+    let i = 0, j = 0;
+
+    while(i < losers.length && j < winners.length){
+      const amount = Math.min(losers[i].value, winners[j].value);
+
+      result.push({
+        from: losers[i].name,
+        to: winners[j].name,
+        value: amount
+      });
+
+      losers[i].value -= amount;
+      winners[j].value -= amount;
+
+      if(losers[i].value === 0) i++;
+      if(winners[j].value === 0) j++;
+    }
+
+    return result;
+  }
+
+  function renderSettlements(data){
+    const el = $("settlements");
+    if(!el) return;
+
+    if(!data || data.length === 0){
+      el.innerHTML = `<div class="small muted">Nenhum acerto pendente.</div>`;
+      return;
+    }
+
+    el.innerHTML = data.map(s => `
+      <div class="rank-item">
+        <div><b>${escapeHtml(s.from)}</b> paga <b>${escapeHtml(s.to)}</b></div>
+        <div class="neg">${fmtMoney(s.value, "BRL")}</div>
+      </div>
+    `).join("");
+  }
+
+  // ======= UI RENDER =======
+  function render(){
+    if(state.activeTable){
+      $("tableStatus").textContent = `Mesa ativa: ${state.activeTable.name || "(sem nome)"} • dinheiro`;
+      $("rankHint").style.display = "none";
+    } else {
+      $("tableStatus").textContent = "Sem mesa ativa";
+      $("rankHint").style.display = "none"; // vamos mostrar o último ranking, se existir
+
+      if(state.lastRanking){
+        $("ranking").innerHTML = state.lastRanking.map((r, i)=>`
+          <div class="rank-item">
+            <div><b>#${i+1}</b> ${escapeHtml(r.name)}</div>
+            <div class="${r.profit >= 0 ? "pos" : "neg"}">${fmtMoney(r.profit, "BRL")}</div>
+          </div>
+        `).join("");
+      } else {
+        $("ranking").innerHTML = `<div class="small muted">Inicie uma mesa e registre saídas para ver o ranking.</div>`;
+      }
+
+      renderSettlements(state.lastSettlements);
+      $("summary").textContent = "—";
+    }
+
+    // fixo BRL/dinheiro
+    $("currency").value = "BRL";
+    $("unit").value = "money";
+
+    $("tableName").value = state.activeTable?.name ?? "";
+
+    renderPlayers();
+    renderRankingAndSummary();
+    renderHistory();
+
+    saveState();
+  }
+
+  function renderPlayers(){
+    const el = $("playersList");
+    if(!state.activeTable){
+      el.innerHTML = `<div class="small muted" style="padding:12px 0">Inicie uma mesa para adicionar participantes.</div>`;
+      return;
+    }
+
+    const players = [...state.players].sort((a,b)=>{
+      const ao = a.out ? 1 : 0;
+      const bo = b.out ? 1 : 0;
+      if(ao !== bo) return ao - bo; // ativos primeiro
+      return a.name.localeCompare(b.name);
+    });
+
+    if(players.length === 0){
+      el.innerHTML = `<div class="small muted" style="padding:12px 0">Nenhum participante ainda.</div>`;
+      return;
+    }
+
+    el.innerHTML = players.map(p=>{
+      const buy = totalBuyin(p);
+      const outText = p.out ? fmtMoney(p.out.final, "BRL") : "—";
+      const buyText = fmtMoney(buy, "BRL");
+      const prof = profit(p);
+      let profEl = `<span class="muted">—</span>`;
+
+      if(prof !== null){
+        const cls = prof > 0 ? "pos" : prof < 0 ? "neg" : "zero";
+        profEl = `<span class="${cls}">${fmtMoney(prof, "BRL")}</span>`;
+      }
+
+      const status = p.out
+        ? `<span class="pill" style="color:var(--muted)">Saiu</span>`
+        : `<span class="pill" style="color:var(--text)">Ativo</span>`;
+
+      return `
+        <div class="p">
+          <div>
+            <div style="font-weight:800">${escapeHtml(p.name)}</div>
+            <div class="small muted">${status} • Entradas: ${(p.buyins?.length||0)}</div>
+          </div>
+
+          <div class="money">
+            <div class="small muted">Total entrada</div>
+            <div>${buyText}</div>
+          </div>
+
+          <div class="money">
+            <div class="small muted">Saiu com</div>
+            <div>${outText}</div>
+          </div>
+
+          <div class="money">
+            <div class="small muted">Lucro</div>
+            <div>${profEl}</div>
+          </div>
+
+          <div class="actions" style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn secondary" onclick="addMoney('${p.id}')" ${p.out ? "disabled":""}>+ Dinheiro</button>
+            <button class="btn danger" onclick="cashOut('${p.id}')" ${p.out ? "disabled":""}>Sair</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderRankingAndSummary(){
+    if(!state.activeTable) return;
+
+    const players = state.players;
+    const closed = players.filter(p=>p.out);
+    const open = players.filter(p=>!p.out);
+
+    const ranked = closed
+      .map(p=>({ id:p.id, name:p.name, profit: profit(p) }))
+      .sort((a,b)=>b.profit - a.profit);
+
+    const rankingEl = $("ranking");
+    if(ranked.length === 0){
+      rankingEl.innerHTML = `<div class="small muted">Ninguém saiu ainda. Registre saídas para gerar ranking.</div>`;
+      renderSettlements([]);
+    } else {
+      rankingEl.innerHTML = ranked.map((r, i)=>`
+        <div class="rank-item">
+          <div><b>#${i+1}</b> ${escapeHtml(r.name)}</div>
+          <div class="${r.profit > 0 ? "pos" : r.profit < 0 ? "neg" : "zero"}">${fmtMoney(r.profit, "BRL")}</div>
+        </div>
+      `).join("");
+
+      // acertos no jogo em andamento (somente com quem já saiu)
+      const settlements = calculateSettlements(closed);
+      renderSettlements(settlements);
+    }
+
+    // resumo
+    const totalIn = players.reduce((acc,p)=>acc + totalBuyin(p), 0);
+    const totalInText = fmtMoney(totalIn, "BRL");
+    const openCount = open.length;
+    const closedCount = closed.length;
+
+    $("summary").innerHTML = `
+      Participantes: <b>${players.length}</b> • Ativos: <b>${openCount}</b> • Já saíram: <b>${closedCount}</b><br/>
+      Total de entradas (mesa toda): <b>${totalInText}</b>
+    `;
+  }
+
+  function renderHistory(){
+    const el = $("history");
+    if(state.history.length === 0){
+      el.innerHTML = `<div class="small muted" style="padding:10px 0">Nenhuma mesa encerrada ainda.</div>`;
+      return;
+    }
+
+    el.innerHTML = state.history
+      .slice().reverse()
+      .map(h=>{
+        const top = h.ranking?.[0];
+        const topVal = top ? fmtMoney(top.profit, "BRL") : "—";
+        return `
+          <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <div>
+                <div style="font-weight:800">${escapeHtml(h.table.name || "(sem nome)")}</div>
+                <div class="small muted">Encerrada em ${new Date(h.closedAt).toLocaleString("pt-BR")}</div>
+              </div>
+              <div class="pill">Top: ${top ? escapeHtml(top.name) : "—"} • ${topVal}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+  }
+
+  function escapeHtml(str){
+    return String(str||"").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  // ======= ACTIONS =======
+  window.addMoney = function(playerId){
+    try{
+      ensureActiveTable();
+      const p = state.players.find(x=>x.id===playerId);
+      if(!p || p.out) return;
+
+      const valStr = prompt(`Quanto adicionar (R$) para ${p.name}?`, "0");
+      if(valStr === null) return;
+      const amount = Number(valStr);
+      if(!Number.isFinite(amount) || amount <= 0){
+        toast("Valor inválido.");
+        return;
+      }
+      p.buyins.push({ amount, at: Date.now() });
+      toast("Dinheiro adicionado.");
+      render();
+    }catch(e){ toast(e.message); }
+  }
+
+  window.cashOut = function(playerId){
+    try{
+      ensureActiveTable();
+      const p = state.players.find(x=>x.id===playerId);
+      if(!p || p.out) return;
+
+      const valStr = prompt(`Com quanto (R$) ${p.name} saiu da mesa?`, "0");
+      if(valStr === null) return;
+      const final = Number(valStr);
+      if(!Number.isFinite(final) || final < 0){
+        toast("Valor inválido.");
+        return;
+      }
+      p.out = { final, at: Date.now() };
+
+      const prof = profit(p);
+      if(prof > 0) toast(`${p.name} saiu no LUCRO!`);
+      else if(prof < 0) toast(`${p.name} saiu no PREJUÍZO.`);
+      else toast(`${p.name} saiu no ZERO a ZERO.`);
+      render();
+    }catch(e){ toast(e.message); }
+  }
+
+  function startOrResume(){
+    const name = $("tableName").value.trim();
+
+    if(!state.activeTable){
+      state.activeTable = {
+        id: uid(),
+        name: name || "Mesa sem nome",
+        currency: "BRL",
+        unit: "money",
+        createdAt: Date.now(),
+        closedAt: null
+      };
+      state.players = [];
+      // ao iniciar uma nova mesa, limpa o "último resultado"
+      state.lastRanking = null;
+      state.lastSettlements = null;
+
+      toast("Mesa iniciada!");
+    } else {
+      state.activeTable.name = name || state.activeTable.name;
+      toast("Mesa retomada/atualizada.");
+    }
+    render();
+  }
+
+  function addPlayer(){
+    try{
+      ensureActiveTable();
+      const name = $("playerName").value.trim();
+      const buyin = Number($("playerBuyin").value);
+
+      if(!name){
+        toast("Informe o nome.");
+        return;
+      }
+      if(!Number.isFinite(buyin) || buyin <= 0){
+        toast("Entrada inválida.");
+        return;
+      }
+      if(state.players.some(p=>p.name.toLowerCase() === name.toLowerCase() && !p.out)){
+        toast("Já existe um participante ativo com esse nome.");
+        return;
+      }
+
+      state.players.push({
+        id: uid(),
+        name,
+        buyins: [{ amount: buyin, at: Date.now() }],
+        out: null
+      });
+
+      $("playerName").value = "";
+      $("playerBuyin").value = "";
+      toast("Participante adicionado.");
+      render();
+    }catch(e){ toast(e.message); }
+  }
+
+  function closeTable(){
+    try{
+      ensureActiveTable();
+
+      const open = state.players.filter(p=>!p.out);
+      for(const p of open){
+        const valStr = prompt(`Encerrando mesa: com quanto (R$) ${p.name} terminou?`, "0");
+        if(valStr === null){
+          toast("Encerramento cancelado.");
+          return;
+        }
+        const final = Number(valStr);
+        if(!Number.isFinite(final) || final < 0){
+          toast("Valor inválido. Encerramento cancelado.");
+          return;
+        }
+        p.out = { final, at: Date.now() };
+      }
+
+      const ranking = state.players
+        .map(p=>({ name:p.name, profit: profit(p) }))
+        .sort((a,b)=>b.profit - a.profit);
+
+      const settlements = calculateSettlements(state.players);
+
+      const snapshot = JSON.parse(JSON.stringify(state.players));
+      const tableSnapshot = JSON.parse(JSON.stringify(state.activeTable));
+      const closedAt = Date.now();
+
+      state.history.push({
+        table: tableSnapshot,
+        playersSnapshot: snapshot,
+        ranking,
+        settlements,
+        closedAt
+      });
+
+      // mantém na tela após encerrar
+      state.lastRanking = ranking;
+      state.lastSettlements = settlements;
+
+      // limpa mesa ativa
+      state.activeTable.closedAt = closedAt;
+      state.activeTable = null;
+      state.players = [];
+
+      toast("Mesa encerrada e salva no histórico.");
+      render();
+    }catch(e){ toast(e.message); }
+  }
+
+  function resetAll(){
+    const ok = confirm("Isso vai apagar a mesa atual, o último resultado e o histórico do navegador. Continuar?");
+    if(!ok) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+
+  // ======= EVENTS =======
+  $("btnStart").addEventListener("click", startOrResume);
+  $("btnAddPlayer").addEventListener("click", addPlayer);
+  $("btnCloseTable").addEventListener("click", closeTable);
+  $("btnReset").addEventListener("click", resetAll);
+
+  $("playerBuyin").addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") addPlayer();
+  });
+
+  render();
+</script>
+</body>
+</html>
