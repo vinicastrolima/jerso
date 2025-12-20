@@ -497,6 +497,7 @@
 
           <div class="actions" style="display:flex;gap:10px;justify-content:flex-end">
             <button class="btn secondary" onclick="addMoney('${p.id}')" ${p.out ? "disabled":""}>+ Dinheiro</button>
+            <button class="btn warn" onclick="editPlayer('${p.id}')">Editar</button>
             <button class="btn danger" onclick="cashOut('${p.id}')" ${p.out ? "disabled":""}>Sair</button>
           </div>
         </div>
@@ -576,6 +577,39 @@
     }[s]));
   }
 
+  // ======= VALIDATION HELPERS =======
+  function validateAmount(input, allowZero = false){
+    if(input === null || input === undefined || input === "") return null;
+    const trimmed = String(input).trim().replace(/[^\d,.-]/g, "").replace(",", ".");
+    if(trimmed === "" || trimmed === "-" || trimmed === ".") return null;
+    const num = Number(trimmed);
+    if(!Number.isFinite(num)) return null;
+    if(allowZero && num < 0) return null;
+    if(!allowZero && num <= 0) return null;
+    return num;
+  }
+
+  function promptAmount(message, defaultValue = "0", allowZero = false){
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while(attempts < maxAttempts){
+      const input = prompt(message, defaultValue);
+      if(input === null) return null; // usuário cancelou
+      
+      const amount = validateAmount(input, allowZero);
+      if(amount !== null) return amount;
+      
+      attempts++;
+      if(attempts < maxAttempts){
+        toast(`Valor inválido. Tente novamente. (${attempts}/${maxAttempts})`);
+      }
+    }
+    
+    toast("Muitas tentativas inválidas. Operação cancelada.");
+    return null;
+  }
+
   // ======= ACTIONS =======
   window.addMoney = function(playerId){
     try{
@@ -583,17 +617,139 @@
       const p = state.players.find(x=>x.id===playerId);
       if(!p || p.out) return;
 
-      const valStr = prompt(`Quanto adicionar (R$) para ${p.name}?`, "0");
-      if(valStr === null) return;
-      const amount = Number(valStr);
-      if(!Number.isFinite(amount) || amount <= 0){
-        toast("Valor inválido.");
-        return;
-      }
+      const amount = promptAmount(`Quanto adicionar (R$) para ${p.name}?`, "0", false);
+      if(amount === null) return;
+      
       p.buyins.push({ amount, at: Date.now() });
       toast("Dinheiro adicionado.");
       render();
     }catch(e){ toast(e.message); }
+  }
+
+  window.editPlayer = function(playerId){
+    try{
+      ensureActiveTable();
+      const p = state.players.find(x=>x.id===playerId);
+      if(!p) return;
+
+      const playerTotalBuyin = totalBuyin(p);
+      const buyinsCount = (p.buyins || []).length;
+      
+      let options = `\n\nOpções:\n`;
+      options += `1 - Editar entradas individuais (${buyinsCount} entrada${buyinsCount !== 1 ? "s" : ""})\n`;
+      if(p.out){
+        options += `2 - Editar valor final (atual: ${fmtMoney(p.out.final)})\n`;
+      }
+      options += `3 - Cancelar\n\n`;
+      
+      const choice = prompt(
+        `Editar valores de ${p.name}\n` +
+        `Total de entradas: ${fmtMoney(playerTotalBuyin)}\n` +
+        (p.out ? `Valor final: ${fmtMoney(p.out.final)}\n` : "") +
+        options +
+        `Digite o número da opção:`,
+        "1"
+      );
+      
+      if(choice === null) return;
+      
+      const choiceNum = parseInt(choice);
+      
+      if(choiceNum === 1){
+        // Editar entradas individuais
+        editBuyins(p);
+      } else if(choiceNum === 2 && p.out){
+        // Editar valor final
+        editFinalAmount(p);
+      } else {
+        toast("Operação cancelada.");
+      }
+    }catch(e){ toast(e.message); }
+  }
+
+  function editBuyins(player){
+    const buyins = player.buyins || [];
+    if(buyins.length === 0){
+      toast("Nenhuma entrada para editar.");
+      return;
+    }
+
+    let menu = `\n\nEntradas de ${player.name}:\n`;
+    buyins.forEach((b, i) => {
+      menu += `${i + 1} - ${fmtMoney(b.amount)} (${new Date(b.at).toLocaleTimeString("pt-BR")})\n`;
+    });
+    menu += `${buyins.length + 1} - Adicionar nova entrada\n`;
+    menu += `${buyins.length + 2} - Remover última entrada\n`;
+    menu += `0 - Cancelar\n\n`;
+    
+    const choice = prompt(menu + `Digite o número da entrada para editar ou a opção desejada:`, "1");
+    if(choice === null) return;
+    
+    const choiceNum = parseInt(choice);
+    
+    if(choiceNum === 0) return;
+    
+    if(choiceNum >= 1 && choiceNum <= buyins.length){
+      // Editar entrada específica
+      const buyin = buyins[choiceNum - 1];
+      const newAmount = promptAmount(
+        `Editar entrada #${choiceNum} de ${player.name}\n` +
+        `Valor atual: ${fmtMoney(buyin.amount)}\n` +
+        `Novo valor (R$):`,
+        String(buyin.amount),
+        false
+      );
+      
+      if(newAmount !== null){
+        buyin.amount = newAmount;
+        toast(`Entrada #${choiceNum} atualizada.`);
+        render();
+      }
+    } else if(choiceNum === buyins.length + 1){
+      // Adicionar nova entrada
+      const amount = promptAmount(`Valor da nova entrada (R$) para ${player.name}:`, "0", false);
+      if(amount !== null){
+        buyins.push({ amount, at: Date.now() });
+        toast("Nova entrada adicionada.");
+        render();
+      }
+    } else if(choiceNum === buyins.length + 2 && buyins.length > 1){
+      // Remover última entrada
+      const confirm = window.confirm(`Remover última entrada de ${fmtMoney(buyins[buyins.length - 1].amount)}?`);
+      if(confirm){
+        buyins.pop();
+        toast("Última entrada removida.");
+        render();
+      }
+    } else if(choiceNum === buyins.length + 2 && buyins.length === 1){
+      toast("Não é possível remover a única entrada. Adicione outra entrada primeiro.");
+    } else {
+      toast("Opção inválida.");
+    }
+  }
+
+  function editFinalAmount(player){
+    if(!player.out) return;
+    
+    const newFinal = promptAmount(
+      `Editar valor final de ${player.name}\n` +
+      `Valor atual: ${fmtMoney(player.out.final)}\n` +
+      `Novo valor (R$):`,
+      String(player.out.final),
+      true
+    );
+    
+    if(newFinal !== null){
+      player.out.final = newFinal;
+      player.out.at = Date.now(); // atualiza timestamp
+      
+      const prof = profit(player);
+      if(prof > 0) toast(`${player.name} atualizado - LUCRO!`);
+      else if(prof < 0) toast(`${player.name} atualizado - PREJUÍZO.`);
+      else toast(`${player.name} atualizado - ZERO a ZERO.`);
+      
+      render();
+    }
   }
 
   window.cashOut = function(playerId){
@@ -602,13 +758,9 @@
       const p = state.players.find(x=>x.id===playerId);
       if(!p || p.out) return;
 
-      const valStr = prompt(`Com quanto (R$) ${p.name} saiu da mesa?`, "0");
-      if(valStr === null) return;
-      const final = Number(valStr);
-      if(!Number.isFinite(final) || final < 0){
-        toast("Valor inválido.");
-        return;
-      }
+      const final = promptAmount(`Com quanto (R$) ${p.name} saiu da mesa?`, "0", true);
+      if(final === null) return;
+      
       p.out = { final, at: Date.now() };
 
       const prof = profit(p);
@@ -683,14 +835,9 @@
 
       const open = state.players.filter(p=>!p.out);
       for(const p of open){
-        const valStr = prompt(`Encerrando mesa: com quanto (R$) ${p.name} terminou?`, "0");
-        if(valStr === null){
+        const final = promptAmount(`Encerrando mesa: com quanto (R$) ${p.name} terminou?`, "0", true);
+        if(final === null){
           toast("Encerramento cancelado.");
-          return;
-        }
-        const final = Number(valStr);
-        if(!Number.isFinite(final) || final < 0){
-          toast("Valor inválido. Encerramento cancelado.");
           return;
         }
         p.out = { final, at: Date.now() };
