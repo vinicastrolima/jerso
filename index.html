@@ -250,6 +250,13 @@
         margin-top: 6px;
       }
 
+      .history-item{
+        cursor:pointer;
+      }
+      .history-item:hover{
+        background:rgba(255,255,255,.02);
+      }
+
       /* TOAST */
       .toast {
         right: 10px;
@@ -354,6 +361,44 @@
     </div>
   </div>
 
+  <!-- MODAL DETALHES DE MESA ENCERRADA -->
+  <div class="modal-backdrop" id="historyModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3 id="historyModalTitle">Detalhes da mesa</h3>
+          <div class="small muted" id="historyModalSubtitle"></div>
+        </div>
+        <button class="btn secondary small-btn" id="btnCloseHistoryModal">Fechar</button>
+      </div>
+
+      <div class="hr" style="margin:10px 0"></div>
+
+      <div class="small" id="historySummary"></div>
+
+      <div class="hr" style="margin:10px 0"></div>
+
+      <div>
+        <div class="small" style="margin-bottom:4px;">Jogadores (lucro/prejuízo)</div>
+        <div id="historyPlayers" class="buyins-list small"></div>
+      </div>
+
+      <div class="hr" style="margin:10px 0"></div>
+
+      <div>
+        <div class="small" style="margin-bottom:4px;">Detalhe por jogador (entradas e saída)</div>
+        <div id="historyPlayersDetail" class="buyins-list small"></div>
+      </div>
+
+      <div class="hr" style="margin:10px 0"></div>
+
+      <div>
+        <div class="small" style="margin-bottom:4px;">Acertos (quem paga quem)</div>
+        <div id="historySettlements" class="buyins-list small"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL EDIÇÃO DE JOGADOR -->
   <div class="modal-backdrop" id="editModal">
     <div class="modal">
@@ -407,6 +452,7 @@
   };
 
   let editingPlayerId = null;
+  let viewingHistoryIndex = null;
 
   // ======= HELPERS =======
   const $ = (id) => document.getElementById(id);
@@ -655,23 +701,26 @@
       return;
     }
 
-    el.innerHTML = state.history
-      .slice().reverse()
-      .map(h=>{
-        const top = h.ranking?.[0];
-        const topVal = top ? fmtMoney(top.profit, "BRL") : "—";
-        return `
-          <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
-              <div>
-                <div style="font-weight:800">${escapeHtml(h.table.name || "(sem nome)")}</div>
-                <div class="small muted">Encerrada em ${new Date(h.closedAt).toLocaleString("pt-BR")}</div>
-              </div>
-              <div class="pill">Top: ${top ? escapeHtml(top.name) : "—"} • ${topVal}</div>
+    const items = state.history
+      .map((h, idx) => ({ h, idx }))
+      .slice()
+      .reverse();
+
+    el.innerHTML = items.map(({ h, idx })=>{
+      const top = h.ranking?.[0];
+      const topVal = top ? fmtMoney(top.profit, "BRL") : "—";
+      return `
+        <div class="history-item" data-history-index="${idx}" style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:800">${escapeHtml(h.table.name || "(sem nome)")}</div>
+              <div class="small muted">Encerrada em ${new Date(h.closedAt).toLocaleString("pt-BR")}</div>
             </div>
+            <div class="pill">Top: ${top ? escapeHtml(top.name) : "—"} • ${topVal}</div>
           </div>
-        `;
-      }).join("");
+        </div>
+      `;
+    }).join("");
   }
 
   function escapeHtml(str){
@@ -711,6 +760,100 @@
     
     toast("Muitas tentativas inválidas. Operação cancelada.");
     return null;
+  }
+
+  // ======= MODAL DETALHES DE MESA ENCERRADA =======
+  function openHistoryModal(index){
+    const h = state.history[index];
+    if(!h) return;
+
+    viewingHistoryIndex = index;
+
+    const tableName = h.table?.name || "Mesa sem nome";
+    const closedAtStr = new Date(h.closedAt).toLocaleString("pt-BR");
+
+    $("historyModalTitle").textContent = tableName;
+    $("historyModalSubtitle").textContent = `Encerrada em ${closedAtStr}`;
+
+    const players = h.playersSnapshot || [];
+    const totalPlayers = players.length;
+    const totalIn = players.reduce((acc, p) =>
+      acc + (p.buyins || []).reduce((a, b) => a + Number(b.amount || 0), 0)
+    , 0);
+
+    $("historySummary").innerHTML =
+      `Participantes: <b>${totalPlayers}</b> • Total de entradas: <b>${fmtMoney(totalIn, "BRL")}</b>`;
+
+    // Jogadores com lucro/prejuízo
+    const ranking = (h.ranking || []).slice();
+    if(ranking.length === 0){
+      $("historyPlayers").innerHTML =
+        `<div class="small muted" style="padding:6px 0;">Nenhum ranking calculado para essa mesa.</div>`;
+    } else {
+      $("historyPlayers").innerHTML = ranking.map((r, i)=>{
+        const cls = r.profit > 0 ? "pos" : r.profit < 0 ? "neg" : "zero";
+        return `
+          <div class="buyin-row">
+            <div>
+              <div class="tag-amount">#${i+1} • ${escapeHtml(r.name)}</div>
+              <div class="tag-time">Lucro/prejuízo</div>
+            </div>
+            <div class="${cls}">${fmtMoney(r.profit, "BRL")}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Detalhe por jogador: entradas, total, saída, lucro/prejuízo
+    if(players.length === 0){
+      $("historyPlayersDetail").innerHTML =
+        `<div class="small muted" style="padding:6px 0;">Nenhum jogador registrado nessa mesa.</div>`;
+    } else {
+      $("historyPlayersDetail").innerHTML = players.map((p)=>{
+        const totalInPlayer = (p.buyins || []).reduce((a, b)=>a + Number(b.amount || 0), 0);
+        const final = p.out ? Number(p.out.final || 0) : null;
+        const prof = p.out != null ? (final - totalInPlayer) : null;
+        const cls = prof == null ? "muted" : prof > 0 ? "pos" : prof < 0 ? "neg" : "zero";
+
+        const buyinsLines = (p.buyins || []).map((b, idx)=>{
+          const t = new Date(b.at).toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
+          return `<div class="tag-time">#${idx+1} • ${fmtMoney(b.amount, "BRL")} • ${t}</div>`;
+        }).join("");
+
+        return `
+          <div class="buyin-row">
+            <div>
+              <div class="tag-amount">${escapeHtml(p.name)}</div>
+              <div class="tag-time">Total entradas: ${fmtMoney(totalInPlayer, "BRL")}</div>
+              <div class="tag-time">Saiu com: ${final != null ? fmtMoney(final, "BRL") : "— (não informado)"}</div>
+              ${buyinsLines}
+            </div>
+            <div class="${cls}">
+              ${prof == null ? "—" : fmtMoney(prof, "BRL")}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Acertos (quem paga quem)
+    const settlements = h.settlements || [];
+    if(settlements.length === 0){
+      $("historySettlements").innerHTML =
+        `<div class="small muted" style="padding:6px 0;">Nenhum acerto pendente para essa mesa.</div>`;
+    } else {
+      $("historySettlements").innerHTML = settlements.map(s => `
+        <div class="buyin-row">
+          <div>
+            <div class="tag-amount">${escapeHtml(s.from)} → ${escapeHtml(s.to)}</div>
+            <div class="tag-time">Pagamento</div>
+          </div>
+          <div class="neg">${fmtMoney(s.value, "BRL")}</div>
+        </div>
+      `).join("");
+    }
+
+    $("historyModal").classList.add("show");
   }
 
   // ======= MODAL: LISTA DE BUY-INS =======
@@ -933,6 +1076,21 @@
 
   $("playerBuyin").addEventListener("keydown", (e)=>{
     if(e.key === "Enter") addPlayer();
+  });
+
+  // Modal histórico: fechar
+  $("btnCloseHistoryModal").addEventListener("click", ()=>{
+    $("historyModal").classList.remove("show");
+    viewingHistoryIndex = null;
+  });
+
+  // Histórico: clique no item para abrir detalhes
+  $("history").addEventListener("click", (e)=>{
+    const item = e.target.closest(".history-item");
+    if(!item) return;
+    const idx = Number(item.dataset.historyIndex);
+    if(!Number.isInteger(idx)) return;
+    openHistoryModal(idx);
   });
 
   // Modal: fechar
