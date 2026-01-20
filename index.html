@@ -390,12 +390,6 @@
         <div id="historyPlayersDetail" class="buyins-list small"></div>
       </div>
 
-      <div class="hr" style="margin:10px 0"></div>
-
-      <div>
-        <div class="small" style="margin-bottom:4px;">Acertos (quem paga quem)</div>
-        <div id="historySettlements" class="buyins-list small"></div>
-      </div>
     </div>
   </div>
 
@@ -834,23 +828,6 @@
           </div>
         `;
       }).join("");
-    }
-
-    // Acertos (quem paga quem)
-    const settlements = h.settlements || [];
-    if(settlements.length === 0){
-      $("historySettlements").innerHTML =
-        `<div class="small muted" style="padding:6px 0;">Nenhum acerto pendente para essa mesa.</div>`;
-    } else {
-      $("historySettlements").innerHTML = settlements.map(s => `
-        <div class="buyin-row">
-          <div>
-            <div class="tag-amount">${escapeHtml(s.from)} → ${escapeHtml(s.to)}</div>
-            <div class="tag-time">Pagamento</div>
-          </div>
-          <div class="neg">${fmtMoney(s.value, "BRL")}</div>
-        </div>
-      `).join("");
     }
 
     $("historyModal").classList.add("show");
