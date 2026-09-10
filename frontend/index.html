@@ -835,18 +835,32 @@
 
     // API Base URL Resolver
     const DEFAULT_PROD_API = 'https://api-poker.vcldev.com.br/api';
+    const FRONTEND_HOSTS = ['jersopoker.vcldev.com.br', 'www.jersopoker.vcldev.com.br'];
+
+    function normalizeApiBase(value) {
+      if (!value) return null;
+      const raw = String(value).trim().replace(/\/+$/, '');
+      if (!raw || raw === '/api' || raw.includes('seudominio.com')) return null;
+
+      try {
+        const parsed = new URL(raw, window.location.origin);
+        if (FRONTEND_HOSTS.includes(parsed.hostname)) return DEFAULT_PROD_API;
+        if (parsed.hostname === 'api-poker.vcldev.com.br' && !parsed.pathname.startsWith('/api')) {
+          return DEFAULT_PROD_API;
+        }
+        return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '') || '/api'}`;
+      } catch {
+        return null;
+      }
+    }
+
     function resolveInitialApiBase() {
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:8000/api';
       }
-      if (window.ALAPOKER_CONFIG && window.ALAPOKER_CONFIG.API_BASE_URL && !window.ALAPOKER_CONFIG.API_BASE_URL.includes('seudominio.com')) {
-        return window.ALAPOKER_CONFIG.API_BASE_URL;
-      }
-      const saved = localStorage.getItem('alapoker_api_base');
-      if (saved && saved !== '/api' && !saved.includes('seudominio.com')) {
-        return saved;
-      }
-      return DEFAULT_PROD_API;
+      return normalizeApiBase(window.ALAPOKER_CONFIG && window.ALAPOKER_CONFIG.API_BASE_URL)
+        || normalizeApiBase(localStorage.getItem('alapoker_api_base'))
+        || DEFAULT_PROD_API;
     }
 
     // App State
@@ -933,13 +947,14 @@
 
     // API Fetch Wrapper
     async function apiFetch(endpoint, options = {}) {
+      const { silent = false, _retried = false, ...fetchOptions } = options;
       const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
       const url = `${state.apiBase}${cleanEndpoint}`;
 
       const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        ...(options.headers || {})
+        ...(fetchOptions.headers || {})
       };
 
       if (state.managerPin) {
@@ -947,15 +962,21 @@
       }
 
       try {
-        const res = await fetch(url, { ...options, headers });
+        const res = await fetch(url, { ...fetchOptions, headers });
         const contentType = res.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
+          if (!_retried && state.apiBase !== DEFAULT_PROD_API) {
+            state.apiBase = DEFAULT_PROD_API;
+            localStorage.setItem('alapoker_api_base', DEFAULT_PROD_API);
+            return apiFetch(endpoint, { ...options, silent, _retried: true });
+          }
           throw new Error('API não conectada ou retornou HTML. Conecte sua VPS no ícone de servidor (topo da tela).');
         }
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Erro na requisição');
         return data;
       } catch (err) {
+        if (silent) throw err;
         let msg = err.message || 'Erro na conexão com o servidor';
         if (msg.includes('Unexpected token') || msg.includes('is not valid JSON')) {
           msg = 'API não conectada. Configure a URL da sua VPS no ícone de servidor (topo).';
@@ -973,7 +994,7 @@
       }
 
       try {
-        const data = await apiFetch(`/tables/${state.activeCode}`);
+        const data = await apiFetch(`/tables/${state.activeCode}`, { silent });
         state.tableData = data;
         state.isManager = data.is_manager;
         renderActiveTable(data);
@@ -1222,7 +1243,7 @@
       document.getElementById('topTableIndicator').classList.add('hidden');
 
       try {
-        const res = await apiFetch('/tables');
+        const res = await apiFetch('/tables', { silent: true });
         const container = document.getElementById('recentTablesContainer');
         if (res.tables && res.tables.length > 0) {
           container.innerHTML = res.tables.slice(0, 5).map(t => `
@@ -1909,7 +1930,7 @@
       e.preventDefault();
       const val = document.getElementById('apiBaseUrlInput').value.trim();
       if (!val) return;
-      state.apiBase = val.replace(/\/+$/, '');
+      state.apiBase = normalizeApiBase(val) || val.replace(/\/+$/, '');
       localStorage.setItem('alapoker_api_base', state.apiBase);
       closeModal('modalApiConfig');
       showToast('Endereço da API atualizado!');
@@ -1926,9 +1947,11 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('alapoker_api_base') === '/api') {
-        localStorage.removeItem('alapoker_api_base');
-        state.apiBase = resolveInitialApiBase();
+      const storedApi = localStorage.getItem('alapoker_api_base');
+      const normalizedApi = normalizeApiBase(storedApi) || resolveInitialApiBase();
+      if (storedApi && storedApi.replace(/\/+$/, '') !== normalizedApi) {
+        localStorage.setItem('alapoker_api_base', normalizedApi);
+        state.apiBase = normalizedApi;
       }
       if (state.activeCode) {
         state.managerPin = sessionStorage.getItem(`alapoker_pin_${state.activeCode}`) || null;

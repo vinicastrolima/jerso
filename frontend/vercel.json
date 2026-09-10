@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://api-poker.vcldev.com.br/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
