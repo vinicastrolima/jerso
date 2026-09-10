@@ -87,6 +87,33 @@
     .pb-safe {
       padding-bottom: env(safe-area-inset-bottom, 1rem);
     }
+
+    @keyframes btn-spin {
+      to { transform: rotate(360deg); }
+    }
+    .btn-spinner {
+      width: 0.85rem;
+      height: 0.85rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 999px;
+      animation: btn-spin 0.55s linear infinite;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    button.is-busy {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    @keyframes flash-ok {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .flash-ok {
+      animation: flash-ok 1.1s ease-out;
+    }
   </style>
 </head>
 <body class="antialiased flex flex-col justify-between">
@@ -520,7 +547,7 @@
         <input id="tablePinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN da mesa" class="w-full text-center tracking-widest font-mono text-2xl py-3 px-4 rounded-xl bg-black/40 border border-white/15 text-white outline-none" required autofocus />
         <div class="grid grid-cols-2 gap-2">
           <button type="button" onclick="closeModal('modalPin')" class="py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs">Desbloquear</button>
+          <button id="btnUnlockPin" type="submit" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all">Desbloquear</button>
         </div>
       </form>
     </div>
@@ -709,7 +736,7 @@
       <div id="closeTableActivePlayersPrompt" class="space-y-3 max-h-60 overflow-y-auto my-4 pr-1"></div>
       <div class="flex gap-2 pt-2">
         <button type="button" onclick="closeModal('modalCloseTable')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-        <button type="button" onclick="submitCloseTable()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs">Finalizar Mesa</button>
+        <button id="btnFinalizeTable" type="button" onclick="submitCloseTable()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all">Finalizar Mesa</button>
       </div>
     </div>
   </div>
@@ -889,22 +916,70 @@
       }[s]));
     }
 
-    function showToast(message, type = 'success') {
+    let toastTimer = null;
+    function showToast(message, type = 'success', duration = 3200) {
       const toast = document.getElementById('toast');
+      const content = document.getElementById('toastContent');
       const text = document.getElementById('toastText');
       const icon = document.getElementById('toastIcon');
 
       text.textContent = message;
-      icon.className = type === 'error' ? 'w-4 h-4 text-red-400 shrink-0' : (type === 'warn' ? 'w-4 h-4 text-amber-400 shrink-0' : 'w-4 h-4 text-emerald-400 shrink-0');
+      icon.className = type === 'error'
+        ? 'w-4 h-4 text-red-400 shrink-0'
+        : (type === 'warn' ? 'w-4 h-4 text-amber-400 shrink-0' : 'w-4 h-4 text-emerald-400 shrink-0');
+
+      content.classList.toggle('border-emerald-400/40', type === 'success');
+      content.classList.toggle('border-amber-400/40', type === 'warn');
+      content.classList.toggle('border-red-400/40', type === 'error');
 
       toast.classList.remove('opacity-0', 'translate-y-4');
       toast.classList.add('opacity-100', 'translate-y-0');
 
-      if (navigator.vibrate) navigator.vibrate(15);
-      setTimeout(() => {
+      if (navigator.vibrate) navigator.vibrate(type === 'success' ? [12, 40, 12] : 15);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', 'translate-y-4');
-      }, 3000);
+      }, duration);
+    }
+
+    function setButtonBusy(btn, busy, busyLabel) {
+      if (!btn) return;
+      if (busy) {
+        if (!btn.dataset.labelHtml) btn.dataset.labelHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        btn.classList.add('is-busy');
+        btn.innerHTML = `<span class="btn-spinner"></span><span>${busyLabel || 'Aguarde'}</span>`;
+      } else {
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        btn.classList.remove('is-busy');
+        if (btn.dataset.labelHtml) {
+          btn.innerHTML = btn.dataset.labelHtml;
+          delete btn.dataset.labelHtml;
+        }
+        lucide.createIcons();
+      }
+    }
+
+    function formSubmitButton(event) {
+      return event.submitter || event.target.querySelector('button[type="submit"]');
+    }
+
+    function flashUnlockFeedback() {
+      const banner = document.getElementById('managerActionBanner');
+      const btn = document.getElementById('btnManagerAction');
+      [banner, btn].forEach(el => {
+        if (!el) return;
+        el.classList.remove('flash-ok');
+        void el.offsetWidth;
+        el.classList.add('flash-ok');
+        setTimeout(() => el.classList.remove('flash-ok'), 1200);
+      });
+      if (banner && window.innerWidth < 640) {
+        banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
 
     function openModal(id) {
@@ -1050,8 +1125,8 @@
       if (state.isManager) {
         document.getElementById('statControlMode').textContent = 'Gerente Ativo';
         document.getElementById('statControlHint').textContent = 'Permissão total de edição';
-        btnManager.className = 'flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5';
-        btnManager.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i> Bloquear (Sair)';
+        btnManager.className = 'flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/25 transition-all active:scale-95';
+        btnManager.innerHTML = '<i data-lucide="unlock" class="w-3.5 h-3.5"></i> Liberado<span class="hidden sm:inline"> · Sair</span>';
 
         if (!isClosed) {
           btnCloseTable.classList.remove('hidden'); btnCloseTable.classList.add('flex');
@@ -1060,14 +1135,14 @@
         } else {
           btnCloseTable.classList.add('hidden'); managerBanner.classList.add('hidden'); btnDesktopAddPlayer.classList.add('hidden');
         }
-        pinStatusBadge.innerHTML = '<span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"><i data-lucide="check" class="w-3.5 h-3.5"></i> Gerente</span>';
+        pinStatusBadge.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"><i data-lucide="unlock" class="w-3 h-3"></i> Gerente</span>';
       } else {
         document.getElementById('statControlMode').textContent = 'Espectador';
         document.getElementById('statControlHint').textContent = 'Modo somente leitura';
-        btnManager.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5';
-        btnManager.innerHTML = '<i data-lucide="key" class="w-3.5 h-3.5"></i> Desbloquear Edição';
+        btnManager.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95';
+        btnManager.innerHTML = '<i data-lucide="key" class="w-3.5 h-3.5"></i> Desbloquear';
         btnCloseTable.classList.add('hidden'); managerBanner.classList.add('hidden'); btnDesktopAddPlayer.classList.add('hidden');
-        pinStatusBadge.innerHTML = '<span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 text-slate-400 border border-white/10"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Espectador</span>';
+        pinStatusBadge.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-white/5 text-slate-400 border border-white/10"><i data-lucide="eye" class="w-3 h-3"></i> Leitura</span>';
       }
 
       // Toggle do Banner de Mesa Encerrada
@@ -1285,6 +1360,8 @@
       e.preventDefault();
       const pin = document.getElementById('tablePinInput').value.trim();
       if (!pin) return;
+      const btn = formSubmitButton(e);
+      setButtonBusy(btn, true, 'Validando');
       try {
         const res = await apiFetch(`/tables/${state.activeCode}/verify-pin`, {
           method: 'POST',
@@ -1294,12 +1371,18 @@
           state.isManager = true;
           state.managerPin = pin;
           sessionStorage.setItem(`alapoker_pin_${state.activeCode}`, pin);
+          setButtonBusy(btn, false);
           closeModal('modalPin');
           document.getElementById('tablePinInput').value = '';
-          showToast(res.message);
-          loadTableData();
+          showToast('Edição liberada. Agora você pode alterar a mesa.', 'success', 4500);
+          await loadTableData();
+          flashUnlockFeedback();
+        } else {
+          setButtonBusy(btn, false);
         }
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     function openShareModal() {
@@ -1367,15 +1450,20 @@
       e.preventDefault();
       const amount = parseFloat(document.getElementById('addBuyinCustomAmount').value);
       if (!amount || amount <= 0) return;
+      const btn = formSubmitButton(e);
+      setButtonBusy(btn, true, 'Salvando');
       try {
         const res = await apiFetch(`/tables/${state.activeCode}/players/${currentBuyinTablePlayerId}/buyins`, {
           method: 'POST',
           body: JSON.stringify({ amount })
         });
+        setButtonBusy(btn, false);
         closeModal('modalAddBuyin');
         showToast(res.message);
         loadTableData();
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     let currentCashoutTablePlayerId = null;
@@ -1411,15 +1499,20 @@
       e.preventDefault();
       const finalAmount = parseFloat(document.getElementById('cashoutAmountInput').value);
       if (isNaN(finalAmount) || finalAmount < 0) return;
+      const btn = formSubmitButton(e);
+      setButtonBusy(btn, true, 'Confirmando');
       try {
         const res = await apiFetch(`/tables/${state.activeCode}/players/${currentCashoutTablePlayerId}/cashout`, {
           method: 'POST',
           body: JSON.stringify({ final_amount: finalAmount })
         });
+        setButtonBusy(btn, false);
         closeModal('modalCashout');
         showToast(res.message);
         loadTableData();
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     async function quickReopen(tablePlayerId) {
@@ -1556,15 +1649,20 @@
         if (!customName) { showToast('Informe o nome do participante.', 'warn'); return; }
         payload.name = customName;
       }
+      const btn = formSubmitButton(e);
+      setButtonBusy(btn, true, 'Adicionando');
       try {
         const res = await apiFetch(`/tables/${state.activeCode}/players`, {
           method: 'POST',
           body: JSON.stringify(payload)
         });
+        setButtonBusy(btn, false);
         closeModal('modalAddPlayer');
         showToast(res.message);
         loadTableData();
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     async function openNewTableModal() {
@@ -1601,11 +1699,14 @@
       const checkedBoxes = document.querySelectorAll('input[name="selected_players"]:checked');
       const players = Array.from(checkedBoxes).map(b => ({ player_id: b.value, buyin: defaultBuyin }));
 
+      const btn = formSubmitButton(e);
+      setButtonBusy(btn, true, 'Criando');
       try {
         const res = await apiFetch('/tables', {
           method: 'POST',
           body: JSON.stringify({ name, pin, players })
         });
+        setButtonBusy(btn, false);
         closeModal('modalNewTable');
         showToast('Mesa criada com sucesso!');
         switchTable(res.code);
@@ -1613,7 +1714,9 @@
         state.managerPin = pin;
         sessionStorage.setItem(`alapoker_pin_${res.code}`, pin);
         openShareModal();
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     function openCloseTableModal() {
@@ -1647,16 +1750,21 @@
         finalAmounts[pId] = isNaN(val) ? 0 : val;
       });
 
+      const btn = document.getElementById('btnFinalizeTable');
+      setButtonBusy(btn, true, 'Encerrando');
       try {
         await apiFetch(`/tables/${state.activeCode}/close`, {
           method: 'POST',
           body: JSON.stringify({ final_amounts: finalAmounts })
         });
+        setButtonBusy(btn, false);
         closeModal('modalCloseTable');
         showToast('Mesa encerrada com sucesso!');
         loadTableData();
         loadHallOfFame();
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     function openEnterCodeModal() { openModal('modalEnterCode'); }
@@ -1824,6 +1932,8 @@
       e.preventDefault();
       const pin = document.getElementById('adminPinInput').value.trim();
       if (!pin) return;
+      const btn = formSubmitButton(e);
+      setButtonBusy(btn, true, 'Validando');
       try {
         const res = await apiFetch('/admin/verify-pin', { method: 'POST', body: JSON.stringify({ pin }) });
         if (res.success) {
@@ -1831,10 +1941,15 @@
           sessionStorage.setItem('alapoker_admin_unlocked', 'true');
           document.getElementById('adminLockedState').classList.add('hidden');
           document.getElementById('adminUnlockedState').classList.remove('hidden');
-          showToast(res.message);
+          setButtonBusy(btn, false);
+          showToast('Painel admin liberado.', 'success', 4000);
           loadAdminOverview();
+        } else {
+          setButtonBusy(btn, false);
         }
-      } catch {}
+      } catch {
+        setButtonBusy(btn, false);
+      }
     }
 
     function lockAdmin() {
