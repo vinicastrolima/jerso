@@ -46,7 +46,7 @@
   <!-- External Libraries: Lucide Icons, QR Code & Config -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="./config.js"></script>
+  <script src="/config.js"></script>
 
   <style>
     body {
@@ -833,11 +833,25 @@
 
     const route = parseInitialRoute();
 
+    // API Base URL Resolver
+    const DEFAULT_PROD_API = 'https://api-poker.vcldev.com.br/api';
+    function resolveInitialApiBase() {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8000/api';
+      }
+      if (window.ALAPOKER_CONFIG && window.ALAPOKER_CONFIG.API_BASE_URL && !window.ALAPOKER_CONFIG.API_BASE_URL.includes('seudominio.com')) {
+        return window.ALAPOKER_CONFIG.API_BASE_URL;
+      }
+      const saved = localStorage.getItem('alapoker_api_base');
+      if (saved && saved !== '/api' && !saved.includes('seudominio.com')) {
+        return saved;
+      }
+      return DEFAULT_PROD_API;
+    }
+
     // App State
     const state = {
-      apiBase: (window.ALAPOKER_CONFIG && window.ALAPOKER_CONFIG.API_BASE_URL) 
-        ? window.ALAPOKER_CONFIG.API_BASE_URL 
-        : (localStorage.getItem('alapoker_api_base') || '/api'),
+      apiBase: resolveInitialApiBase(),
       activeCode: route.code || localStorage.getItem('alapoker_active_code') || 'DEMO77',
       currentTab: route.tab,
       tableData: null,
@@ -1904,13 +1918,18 @@
 
     function resetApiConfig() {
       localStorage.removeItem('alapoker_api_base');
-      state.apiBase = '/api';
+      state.apiBase = resolveInitialApiBase();
       document.getElementById('apiBaseUrlInput').value = state.apiBase;
-      showToast('Restaurado para padrão relativo.');
+      showToast('Restaurado para a VPS.');
+      loadTableData();
     }
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('alapoker_api_base') === '/api') {
+        localStorage.removeItem('alapoker_api_base');
+        state.apiBase = resolveInitialApiBase();
+      }
       if (state.activeCode) {
         state.managerPin = sessionStorage.getItem(`alapoker_pin_${state.activeCode}`) || null;
       }
