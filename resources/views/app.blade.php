@@ -43,10 +43,9 @@
     }
   </script>
 
-  <!-- External Libraries: Lucide Icons, QR Code & Config -->
+  <!-- Lucide Icons & QR Code -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="./config.js"></script>
 
   <style>
     body {
@@ -71,6 +70,15 @@
       -webkit-backdrop-filter: blur(16px);
     }
 
+    .glass-card-hover {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 12px 30px -10px rgba(16, 185, 129, 0.15);
+      transform: translateY(-2px);
+    }
+
     /* Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -83,7 +91,11 @@
       background: rgba(255, 255, 255, 0.15);
       border-radius: 999px;
     }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
 
+    /* Safe area for mobile iOS home bar */
     .pb-safe {
       padding-bottom: env(safe-area-inset-bottom, 1rem);
     }
@@ -138,12 +150,8 @@
         </button>
       </nav>
 
-      <!-- Right Action / PIN Status & Config -->
+      <!-- Right Action / PIN Status & Nova Mesa -->
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button onclick="openApiConfigModal()" title="Configurar URL da API na VPS" class="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-400 hover:text-white transition-all">
-          <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i>
-        </button>
-
         <div id="pinStatusBadge"></div>
 
         <button onclick="openNewTableModal()" class="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all shadow-lg shadow-emerald-600/20 shrink-0">
@@ -157,12 +165,15 @@
   <!-- Main Container -->
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-12">
 
-    <!-- TAB 1: MESA ATIVA OU SELEÇÃO DE MESA -->
+    <!-- ============================================================= -->
+    <!-- TAB 1: MESA ATIVA OU SELEÇÃO DE MESA                          -->
+    <!-- ============================================================= -->
     <section id="section-table" class="space-y-6">
       
       <!-- Estado Sem Mesa Selecionada -->
       <div id="noTableState" class="hidden">
         <div class="glass-card rounded-3xl p-8 sm:p-12 text-center max-w-lg mx-auto my-8 border border-white/[0.08] shadow-2xl relative overflow-hidden">
+          <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-emerald-400/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-5 shadow-inner">
             <i data-lucide="spade" class="w-8 h-8"></i>
           </div>
@@ -178,6 +189,7 @@
             </button>
           </div>
 
+          <!-- Mesas Recentes / Ativas no Banco -->
           <div id="recentTablesList" class="mt-8 pt-6 border-t border-white/5 text-left">
             <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Mesas recentes</span>
             <div id="recentTablesContainer" class="mt-3 space-y-2"></div>
@@ -188,8 +200,10 @@
       <!-- Estado Com Mesa Ativa -->
       <div id="activeTableState" class="space-y-6">
         
+        <!-- Live Header & Controls -->
         <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/[0.08]">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
             <div>
               <div class="flex items-center gap-2.5 flex-wrap">
                 <span id="tableLiveStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold tracking-wide uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -198,15 +212,18 @@
                 <h1 id="activeTableName" class="text-xl sm:text-2xl font-black text-white tracking-tight">Mesa</h1>
                 <span id="activeTableCodeBadge" class="font-mono text-xs px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300 font-bold"></span>
               </div>
-              <p id="tableSubtitle" class="text-xs text-slate-400 mt-1">Em andamento • BRL Dinheiro</p>
+              <p id="tableSubtitle" class="text-xs text-slate-400 mt-1">Iniciada recentemente • BRL Dinheiro</p>
             </div>
 
+            <!-- Quick Action Buttons -->
             <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               <button onclick="openShareModal()" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
                 <i data-lucide="share-2" class="w-4 h-4 text-emerald-400"></i> Compartilhar
               </button>
 
-              <button id="btnManagerAction" onclick="handleManagerToggle()" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"></button>
+              <button id="btnManagerAction" onclick="handleManagerToggle()" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                <!-- Gerado dinamicamente -->
+              </button>
 
               <button onclick="openNewTableModal()" class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> + Nova Mesa
@@ -218,9 +235,11 @@
             </div>
           </div>
 
-          <!-- Cards Grid -->
+          <!-- 21st.dev Metric Cards Grid -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-            <div class="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.06]">
+            
+            <!-- Total em Mesa -->
+            <div class="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.06] relative overflow-hidden">
               <div class="flex items-center justify-between text-slate-400 text-xs">
                 <span>Dinheiro na Mesa</span>
                 <i data-lucide="coins" class="w-4 h-4 text-emerald-400"></i>
@@ -229,15 +248,17 @@
               <span class="text-[11px] text-slate-400 mt-0.5 block">Total de entradas</span>
             </div>
 
+            <!-- Participantes Ativos -->
             <div class="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.06]">
               <div class="flex items-center justify-between text-slate-400 text-xs">
                 <span>Jogadores Ativos</span>
                 <i data-lucide="user-check" class="w-4 h-4 text-blue-400"></i>
               </div>
-              <div id="statActivePlayers" class="text-lg sm:text-2xl font-extrabold font-mono text-white mt-1 tabular-nums">0 <span class="text-xs text-slate-400 font-normal">ativos</span></div>
+              <div id="statActivePlayers" class="text-lg sm:text-2xl font-extrabold font-mono text-white mt-1 tabular-nums">0 <span class="text-xs text-slate-400 font-normal">na disputa</span></div>
               <span id="statTotalPlayersSubtitle" class="text-[11px] text-slate-400 mt-0.5 block">0 participantes total</span>
             </div>
 
+            <!-- Maior Forra da Mesa -->
             <div class="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.06]">
               <div class="flex items-center justify-between text-slate-400 text-xs">
                 <span>Líder da Mesa</span>
@@ -247,6 +268,7 @@
               <span id="statTopWinnerProfit" class="text-[11px] font-mono text-emerald-400 font-semibold mt-0.5 block">R$ 0,00</span>
             </div>
 
+            <!-- Modo de Acesso -->
             <div class="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.06]">
               <div class="flex items-center justify-between text-slate-400 text-xs">
                 <span>Controle</span>
@@ -255,6 +277,7 @@
               <div id="statControlMode" class="text-sm sm:text-base font-bold text-slate-200 mt-1">Espectador</div>
               <span id="statControlHint" class="text-[11px] text-slate-400 mt-0.5 block">Modo somente leitura</span>
             </div>
+
           </div>
 
           <!-- Banner de Mesa Encerrada com Ação Rápida de Nova Mesa -->
@@ -279,7 +302,7 @@
           </div>
         </div>
 
-        <!-- Manager Quick Banner -->
+        <!-- Manager Quick Action Banner (se unlocked) -->
         <div id="managerActionBanner" class="hidden flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
           <div class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -287,21 +310,24 @@
             </span>
             <div>
               <p class="text-xs font-bold text-white">Modo Gerente Ativo</p>
-              <p class="text-[11px] text-emerald-400/90">Você tem permissão para adicionar entradas e registrar saídas.</p>
+              <p class="text-[11px] text-emerald-400/90">Você pode adicionar participantes, registrar entradas e saídas.</p>
             </div>
           </div>
-          <button onclick="openAddPlayerModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> + Participante
-          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button onclick="openAddPlayerModal()" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+              <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> + Participante
+            </button>
+          </div>
         </div>
 
-        <!-- Participantes -->
+        <!-- Participantes Section -->
         <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/[0.08]">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h2 class="text-base sm:text-lg font-bold text-white">Participantes da Mesa</h2>
-              <p class="text-xs text-slate-400">Entradas, saídas e resultados em tempo real</p>
+              <p class="text-xs text-slate-400">Ativos no topo com entradas e resultados em tempo real</p>
             </div>
+            
             <div id="btnDesktopAddPlayer" class="hidden">
               <button onclick="openAddPlayerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-400 font-bold text-xs flex items-center gap-1.5 transition-all">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar
@@ -309,11 +335,16 @@
             </div>
           </div>
 
-          <div id="tablePlayersList" class="space-y-3"></div>
+          <!-- Lista de Jogadores -->
+          <div id="tablePlayersList" class="space-y-3">
+            <!-- Renderizado via JavaScript -->
+          </div>
         </div>
 
         <!-- Ranking & Settlements Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Ranking da Sessão -->
           <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/[0.08]">
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-2">
@@ -325,6 +356,7 @@
             <div id="tableRankingList" class="space-y-2"></div>
           </div>
 
+          <!-- Acertos: Quem Paga Quem -->
           <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/[0.08]">
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-2">
@@ -337,31 +369,40 @@
             </div>
             <div id="tableSettlementsList" class="space-y-2"></div>
           </div>
+
         </div>
 
       </div>
+
     </section>
 
-    <!-- TAB 2: HALL DA FAMA -->
+    <!-- ============================================================= -->
+    <!-- TAB 2: HALL DA FAMA (RANKING GERAL ACUMULADO)                  -->
+    <!-- ============================================================= -->
     <section id="section-ranking" class="hidden space-y-6">
       <div class="glass-card rounded-2xl p-5 sm:p-8 border border-white/[0.08]">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-2">
-            <span class="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              <i data-lucide="trophy" class="w-6 h-6"></i>
-            </span>
-            <div>
-              <h1 class="text-xl sm:text-2xl font-black text-white">Hall da Fama</h1>
-              <p class="text-xs sm:text-sm text-slate-400">Estatísticas acumuladas de todas as mesas encerradas</p>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <i data-lucide="trophy" class="w-6 h-6"></i>
+              </span>
+              <div>
+                <h1 class="text-xl sm:text-2xl font-black text-white">Hall da Fama</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Estatísticas acumuladas de todas as mesas encerradas</p>
+              </div>
             </div>
           </div>
-          <button onclick="loadHallOfFame()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Atualizar
+
+          <button onclick="loadHallOfFame()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Atualizar Ranking
           </button>
         </div>
 
+        <!-- Podium Top 3 Cards -->
         <div id="podiumContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8"></div>
 
+        <!-- Leaderboard Table -->
         <div class="mt-8 overflow-x-auto">
           <table class="w-full text-left text-sm border-collapse">
             <thead>
@@ -381,45 +422,59 @@
       </div>
     </section>
 
-    <!-- TAB 3: DIRETÓRIO DE JOGADORES -->
+    <!-- ============================================================= -->
+    <!-- TAB 3: DIRETÓRIO DE JOGADORES FREQUENTES                      -->
+    <!-- ============================================================= -->
     <section id="section-players" class="hidden space-y-6">
       <div class="glass-card rounded-2xl p-5 sm:p-8 border border-white/[0.08]">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-2">
-            <span class="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-              <i data-lucide="users" class="w-6 h-6"></i>
-            </span>
-            <div>
-              <h1 class="text-xl sm:text-2xl font-black text-white">Jogadores Cadastrados</h1>
-              <p class="text-xs sm:text-sm text-slate-400">Cadastre amigos para seleção instantânea ao abrir mesas</p>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                <i data-lucide="users" class="w-6 h-6"></i>
+              </span>
+              <div>
+                <h1 class="text-xl sm:text-2xl font-black text-white">Jogadores Cadastrados</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Cadastre seus amigos para seleção instantânea ao abrir novas mesas</p>
+              </div>
             </div>
           </div>
-          <button onclick="openNewPlayerModal()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
+
+          <button onclick="openNewPlayerModal()" class="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
             <i data-lucide="user-plus" class="w-4 h-4"></i> Cadastrar Jogador
           </button>
         </div>
 
+        <!-- Grid de Jogadores -->
         <div id="playersCatalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8"></div>
       </div>
     </section>
 
-    <!-- TAB 4: ADMIN -->
+    <!-- ============================================================= -->
+    <!-- TAB 4: PAINEL ADMIN & HISTÓRICO                               -->
+    <!-- ============================================================= -->
     <section id="section-admin" class="hidden space-y-6">
+      
+      <!-- Se Admin Bloqueado -->
       <div id="adminLockedState" class="glass-card rounded-3xl p-8 text-center max-w-md mx-auto my-8 border border-white/[0.08]">
         <div class="w-14 h-14 mx-auto rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center mb-4">
           <i data-lucide="shield-lock" class="w-7 h-7"></i>
         </div>
         <h2 class="text-xl font-bold text-white">Acesso Administrativo</h2>
-        <p class="text-xs text-slate-400 mt-1 mb-6">Digite o Master PIN para acessar métricas financeiras globais e histórico.</p>
+        <p class="text-xs text-slate-400 mt-1 mb-6">Digite o Master PIN para acessar métricas financeiras globais e histórico avançado.</p>
+        
         <form onsubmit="handleAdminUnlock(event)" class="space-y-4">
-          <input id="adminPinInput" type="password" maxlength="8" placeholder="Master PIN (padrão: 9999)" class="w-full text-center tracking-widest font-mono text-lg py-3 px-4 rounded-xl bg-black/30 border border-white/10 text-white focus:border-purple-500 outline-none" required />
+          <input id="adminPinInput" type="password" maxlength="8" placeholder="Master PIN (padrão: 9999)" class="w-full text-center tracking-widest font-mono text-lg py-3 px-4 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" required />
           <button type="submit" class="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-purple-600/25">
             Desbloquear Painel Admin
           </button>
         </form>
       </div>
 
+      <!-- Se Admin Desbloqueado -->
       <div id="adminUnlockedState" class="hidden space-y-6">
+        
+        <!-- Métricas Globais da Banca -->
         <div class="glass-card rounded-2xl p-5 sm:p-8 border border-white/[0.08]">
           <div class="flex items-center justify-between mb-6">
             <div>
@@ -433,7 +488,7 @@
 
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <span class="text-xs text-slate-400">Volume Total</span>
+              <span class="text-xs text-slate-400">Volume Total Movimentado</span>
               <div id="adminTotalVolume" class="text-xl sm:text-2xl font-mono font-bold text-emerald-400 mt-1 tabular-nums">R$ 0,00</div>
             </div>
             <div class="p-4 rounded-xl bg-white/[0.02] border border-white/5">
@@ -445,105 +500,112 @@
               <div id="adminAveragePot" class="text-xl sm:text-2xl font-mono font-bold text-amber-400 mt-1 tabular-nums">R$ 0,00</div>
             </div>
             <div class="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <span class="text-xs text-slate-400">Jogadores</span>
+              <span class="text-xs text-slate-400">Jogadores Cadastrados</span>
               <div id="adminTotalPlayers" class="text-xl sm:text-2xl font-mono font-bold text-blue-400 mt-1 tabular-nums">0</div>
             </div>
           </div>
         </div>
 
+        <!-- Lista de Mesas Encerradas (Histórico) -->
         <div class="glass-card rounded-2xl p-5 sm:p-8 border border-white/[0.08]">
           <h2 class="text-lg font-bold text-white mb-4">Histórico de Mesas Encerradas</h2>
           <div id="adminHistoryList" class="space-y-3"></div>
         </div>
+
       </div>
+
     </section>
 
   </main>
 
-  <!-- MOBILE BOTTOM BAR -->
+  <!-- ============================================================= -->
+  <!-- MOBILE BOTTOM NAVIGATION BAR                                  -->
+  <!-- ============================================================= -->
   <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.08] bg-poker-950/95 backdrop-blur-2xl pb-safe">
     <div class="grid grid-cols-4 h-16">
+      
       <button onclick="switchTab('table')" id="mobile-tab-table" class="flex flex-col items-center justify-center gap-1 text-emerald-400">
         <i data-lucide="layout-grid" class="w-5 h-5"></i>
         <span class="text-[10px] font-bold">Mesa</span>
       </button>
+
       <button onclick="switchTab('ranking')" id="mobile-tab-ranking" class="flex flex-col items-center justify-center gap-1 text-slate-400">
         <i data-lucide="trophy" class="w-5 h-5"></i>
         <span class="text-[10px] font-medium">Ranking</span>
       </button>
+
       <button onclick="switchTab('players')" id="mobile-tab-players" class="flex flex-col items-center justify-center gap-1 text-slate-400">
         <i data-lucide="users" class="w-5 h-5"></i>
         <span class="text-[10px] font-medium">Jogadores</span>
       </button>
+
       <button onclick="switchTab('admin')" id="mobile-tab-admin" class="flex flex-col items-center justify-center gap-1 text-slate-400">
         <i data-lucide="shield" class="w-5 h-5"></i>
         <span class="text-[10px] font-medium">Admin</span>
       </button>
+
     </div>
   </div>
 
-  <!-- MODAIS -->
+  <!-- ============================================================= -->
+  <!-- MODAIS & BOTTOM SHEETS                                        -->
+  <!-- ============================================================= -->
 
-  <!-- Modal: Configuração da API VPS -->
-  <div id="modalApiConfig" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
-    <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-md w-full border border-white/10 shadow-2xl relative">
-      <button onclick="closeModal('modalApiConfig')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
-      <div class="flex items-center gap-2.5 mb-3">
-        <i data-lucide="server" class="w-5 h-5 text-emerald-400"></i>
-        <h3 class="text-lg font-bold text-white">Endereço da API na VPS</h3>
-      </div>
-      <p class="text-xs text-slate-400 mb-4">Insira o endereço base da sua API Laravel (ex: <code>https://api-poker.seudominio.com/api</code>).</p>
-      <form onsubmit="saveApiConfig(event)" class="space-y-4">
-        <input id="apiBaseUrlInput" type="url" placeholder="https://api-poker.seudominio.com/api" class="w-full py-2.5 px-3.5 rounded-xl bg-black/40 border border-white/15 text-emerald-400 font-mono text-xs outline-none" required />
-        <div class="flex gap-2">
-          <button type="button" onclick="resetApiConfig()" class="py-2.5 px-3 rounded-xl bg-white/5 text-slate-400 text-xs">Padrão</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20">Salvar Conexão</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: PIN de Gerência -->
+  <!-- Modal 1: PIN de Gerência (Handoff / Troca de Turno) -->
   <div id="modalPin" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
-    <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative text-center">
+    <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative">
       <button onclick="closeModal('modalPin')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mb-3">
-        <i data-lucide="key" class="w-6 h-6"></i>
+
+      <div class="text-center">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mb-3">
+          <i data-lucide="key" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white">Desbloquear Gerência</h3>
+        <p class="text-xs text-slate-400 mt-1">Informe o PIN de 4 dígitos da mesa para adicionar entradas, editar participantes e encerrar.</p>
       </div>
-      <h3 class="text-lg font-bold text-white">Desbloquear Gerência</h3>
-      <p class="text-xs text-slate-400 mt-1">Informe o PIN da mesa para liberar a edição.</p>
-      <form onsubmit="submitPinUnlock(event)" class="mt-5 space-y-4">
-        <input id="tablePinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN da mesa" class="w-full text-center tracking-widest font-mono text-2xl py-3 px-4 rounded-xl bg-black/40 border border-white/15 text-white outline-none" required autofocus />
+
+      <form onsubmit="submitPinUnlock(event)" class="mt-6 space-y-4">
+        <input id="tablePinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN da mesa" class="w-full text-center tracking-widest font-mono text-2xl py-3 px-4 rounded-xl bg-black/40 border border-white/15 text-white placeholder:text-slate-600 focus:border-amber-400 outline-none" required autofocus />
+
         <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="closeModal('modalPin')" class="py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs">Desbloquear</button>
+          <button type="button" onclick="closeModal('modalPin')" class="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-lg shadow-amber-500/25">
+            Desbloquear
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Compartilhar Mesa & QR Code -->
+  <!-- Modal 2: Compartilhar Mesa & QR Code -->
   <div id="modalShare" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative text-center">
       <button onclick="closeModal('modalShare')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+
       <h3 class="text-lg font-bold text-white">Mesa ao Vivo</h3>
-      <p class="text-xs text-slate-400 mt-1">Aponte a câmera para acompanhar o pote ou envie no grupo.</p>
+      <p class="text-xs text-slate-400 mt-1">Aponte a câmera para acompanhar o pote ou copie o link para o WhatsApp.</p>
+
+      <!-- QR Code Canvas Container -->
       <div class="my-5 p-3 rounded-2xl bg-white w-fit mx-auto shadow-xl">
         <div id="qrcodeCanvas"></div>
       </div>
+
       <div class="space-y-2">
-        <input id="shareUrlInput" type="text" readonly class="p-2 rounded-xl bg-black/40 border border-white/10 text-xs font-mono text-emerald-400 w-full outline-none text-center truncate" />
+        <div class="flex items-center gap-2 p-2 rounded-xl bg-black/40 border border-white/10 text-xs font-mono text-slate-300">
+          <input id="shareUrlInput" type="text" readonly class="bg-transparent w-full outline-none text-center truncate text-emerald-400" />
+        </div>
+
         <div class="grid grid-cols-2 gap-2">
-          <button onclick="copyShareLink()" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-1.5">
+          <button onclick="copyShareLink()" id="btnCopyLink" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Link
           </button>
-          <button onclick="shareOnWhatsApp()" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5">
+          <button onclick="shareOnWhatsApp()" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20">
             <i data-lucide="send" class="w-3.5 h-3.5"></i> WhatsApp
           </button>
         </div>
@@ -551,246 +613,372 @@
     </div>
   </div>
 
-  <!-- Modal: Nova Mesa -->
+  <!-- Modal 3: Nova Mesa -->
   <div id="modalNewTable" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4 overflow-y-auto">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-white/10 shadow-2xl relative my-6">
       <button onclick="closeModal('modalNewTable')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-      <h3 class="text-lg font-bold text-white mb-1">Criar Nova Mesa</h3>
-      <p class="text-xs text-slate-400 mb-4">Escolha o nome, PIN de gerência e marque os amigos que vão jogar.</p>
+
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Criar Nova Mesa</h3>
+          <p class="text-xs text-slate-400">Configure o nome, PIN de gerência e selecione participantes</p>
+        </div>
+      </div>
+
       <form onsubmit="submitNewTable(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Nome da Mesa</label>
-          <input id="newTableName" type="text" placeholder="Ex: Home Game - Sexta" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm outline-none" />
+          <input id="newTableName" type="text" placeholder="Ex: Home Game - Sexta" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm focus:border-emerald-500 outline-none" />
         </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">PIN de Gerente</label>
-            <input id="newTablePin" type="text" inputmode="numeric" maxlength="6" value="1234" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white font-mono text-center text-sm outline-none" />
+            <label class="block text-xs font-semibold text-slate-300 mb-1">PIN de Gerente (4 dígitos)</label>
+            <input id="newTablePin" type="text" inputmode="numeric" maxlength="6" value="1234" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white font-mono text-center text-sm focus:border-emerald-500 outline-none" />
+            <span class="text-[10px] text-slate-400 mt-1 block">Para passar o controle a outro</span>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">Buy-in Padrão (R$)</label>
-            <input id="newTableDefaultBuyin" type="number" step="0.01" value="100" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white font-mono text-sm outline-none" />
+            <input id="newTableDefaultBuyin" type="number" step="0.01" value="100" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white font-mono text-sm focus:border-emerald-500 outline-none" />
           </div>
         </div>
+
+        <!-- Seleção de Jogadores Cadastrados -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-xs font-semibold text-slate-300">Amigos Cadastrados</label>
+            <label class="block text-xs font-semibold text-slate-300">Selecionar Amigos Cadastrados</label>
             <span class="text-[11px] text-emerald-400 cursor-pointer hover:underline" onclick="selectAllNewTablePlayers()">Marcar todos</span>
           </div>
-          <div id="newTablePlayersSelector" class="max-h-48 overflow-y-auto space-y-1.5 p-2 rounded-xl bg-black/25 border border-white/5"></div>
+          <div id="newTablePlayersSelector" class="max-h-48 overflow-y-auto space-y-1.5 p-2 rounded-xl bg-black/25 border border-white/5">
+            <!-- Populado via JS -->
+          </div>
         </div>
+
         <div class="pt-3 flex gap-2">
-          <button type="button" onclick="closeModal('modalNewTable')" class="flex-1 py-3 rounded-xl bg-white/5 text-slate-300 text-xs font-bold">Cancelar</button>
-          <button type="submit" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-lg shadow-emerald-600/25">Abrir Mesa Agora</button>
+          <button type="button" onclick="closeModal('modalNewTable')" class="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-lg shadow-emerald-600/25 active:scale-95 transition-all">
+            Abrir Mesa Agora
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Adicionar Participante -->
+  <!-- Modal 4: Adicionar Participante à Mesa Ativa -->
   <div id="modalAddPlayer" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative">
       <button onclick="closeModal('modalAddPlayer')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-      <h3 class="text-lg font-bold text-white mb-4">Adicionar Participante</h3>
+
+      <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="user-plus" class="w-5 h-5 text-emerald-400"></i> Adicionar Participante
+      </h3>
+
       <form onsubmit="submitAddPlayer(event)" class="space-y-4">
+        <!-- Escolha entre amigo cadastrado ou convidado avulso -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Jogador Frequente</label>
           <select id="addPlayerSelect" onchange="onAddPlayerSelectChange()" class="w-full py-2.5 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm outline-none">
             <option value="">-- Convidado Avulso (digite o nome) --</option>
           </select>
         </div>
+
         <div id="addPlayerCustomNameBox">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Nome do Convidado</label>
-          <input id="addPlayerCustomName" type="text" placeholder="Ex: Felipe" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm outline-none" />
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Nome do Jogador</label>
+          <input id="addPlayerCustomName" type="text" placeholder="Ex: Felipe" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm focus:border-emerald-500 outline-none" />
         </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Buy-in Inicial (R$)</label>
-          <input id="addPlayerBuyin" type="number" step="0.01" value="100" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white font-mono text-sm outline-none" />
+          <input id="addPlayerBuyin" type="number" step="0.01" value="100" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white font-mono text-sm focus:border-emerald-500 outline-none" />
         </div>
+
         <div class="flex gap-2 pt-2">
-          <button type="button" onclick="closeModal('modalAddPlayer')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs">Adicionar</button>
+          <button type="button" onclick="closeModal('modalAddPlayer')" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">
+            Adicionar
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Presets de Buy-in -->
+  <!-- Modal 5: Adicionar Buy-in (+ Dinheiro com Presets Rápidos) -->
   <div id="modalAddBuyin" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative text-center">
       <button onclick="closeModal('modalAddBuyin')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+
       <h3 class="text-lg font-bold text-white">Adicionar Fichas</h3>
       <p id="addBuyinPlayerName" class="text-xs text-emerald-400 font-semibold mt-0.5">Jogador</p>
+
+      <!-- Presets de Botões Rápidos -->
       <div class="grid grid-cols-4 gap-2 my-4">
-        <button type="button" onclick="setBuyinPreset(20)" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-xs font-mono font-bold text-slate-200">+20</button>
-        <button type="button" onclick="setBuyinPreset(50)" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-xs font-mono font-bold text-slate-200">+50</button>
-        <button type="button" onclick="setBuyinPreset(100)" class="py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-xs font-mono font-bold text-emerald-400">+100</button>
-        <button type="button" onclick="setBuyinPreset(200)" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-xs font-mono font-bold text-slate-200">+200</button>
+        <button type="button" onclick="setBuyinPreset(20)" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-mono font-bold text-slate-200 transition-all">
+          +20
+        </button>
+        <button type="button" onclick="setBuyinPreset(50)" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-mono font-bold text-slate-200 transition-all">
+          +50
+        </button>
+        <button type="button" onclick="setBuyinPreset(100)" class="py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-xs font-mono font-bold text-emerald-400 transition-all">
+          +100
+        </button>
+        <button type="button" onclick="setBuyinPreset(200)" class="py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-mono font-bold text-slate-200 transition-all">
+          +200
+        </button>
       </div>
+
       <form onsubmit="submitAddBuyin(event)" class="space-y-4">
-        <input id="addBuyinCustomAmount" type="number" step="0.01" value="100" required class="w-full text-center font-mono text-xl py-2.5 px-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none" />
+        <div>
+          <label class="block text-left text-xs font-semibold text-slate-300 mb-1">Ou digite o valor (R$)</label>
+          <input id="addBuyinCustomAmount" type="number" step="0.01" value="100" required class="w-full text-center font-mono text-xl py-2.5 px-3 rounded-xl bg-black/40 border border-white/10 text-white focus:border-emerald-500 outline-none" />
+        </div>
+
         <div class="flex gap-2">
-          <button type="button" onclick="closeModal('modalAddBuyin')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs">Confirmar</button>
+          <button type="button" onclick="closeModal('modalAddBuyin')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">
+            Confirmar
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Cashout -->
+  <!-- Modal 6: Saída / Cashout com Cálculo de Lucro em Tempo Real -->
   <div id="modalCashout" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative text-center">
       <button onclick="closeModal('modalCashout')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+
       <div class="w-12 h-12 mx-auto rounded-2xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center mb-3">
         <i data-lucide="log-out" class="w-6 h-6"></i>
       </div>
       <h3 class="text-lg font-bold text-white">Registrar Saída</h3>
       <p id="cashoutPlayerName" class="text-xs font-bold text-slate-300 mt-0.5">Jogador</p>
+
       <div class="my-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-slate-400 flex justify-between">
         <span>Total de entradas:</span>
         <span id="cashoutTotalBuyinDisplay" class="font-mono text-white font-bold">R$ 0,00</span>
       </div>
+
       <form onsubmit="submitCashout(event)" class="space-y-4">
-        <input id="cashoutAmountInput" type="number" step="0.01" placeholder="0.00" oninput="updateCashoutPreview()" required class="w-full text-center font-mono text-2xl py-3 px-3 rounded-xl bg-black/40 border border-white/15 text-white outline-none" autofocus />
+        <div>
+          <label class="block text-left text-xs font-semibold text-slate-300 mb-1">Com quanto em fichas saiu? (R$)</label>
+          <input id="cashoutAmountInput" type="number" step="0.01" placeholder="0.00" oninput="updateCashoutPreview()" required class="w-full text-center font-mono text-2xl py-3 px-3 rounded-xl bg-black/40 border border-white/15 text-white focus:border-emerald-500 outline-none" autofocus />
+        </div>
+
+        <!-- Live Preview do Lucro/Prejuízo -->
         <div id="cashoutPreviewBox" class="p-3 rounded-xl bg-black/30 border border-white/5 text-xs">
           <span class="text-slate-400">Resultado estimado:</span>
           <div id="cashoutPreviewValue" class="text-sm font-bold font-mono text-slate-300 mt-0.5">—</div>
         </div>
+
         <div class="flex gap-2">
-          <button type="button" onclick="closeModal('modalCashout')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs">Confirmar Saída</button>
+          <button type="button" onclick="closeModal('modalCashout')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-600/25 active:scale-95 transition-all">
+            Confirmar Saída
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Editar Entradas -->
+  <!-- Modal 7: Editar Entradas & Detalhes do Jogador -->
   <div id="modalEditPlayer" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-md w-full border border-white/10 shadow-2xl relative">
       <button onclick="closeModal('modalEditPlayer')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+
       <h3 id="editPlayerModalTitle" class="text-lg font-bold text-white">Editar Participante</h3>
-      <p id="editPlayerModalSubtitle" class="text-xs text-slate-400 mt-0.5">Histórico individual de entradas</p>
+      <p id="editPlayerModalSubtitle" class="text-xs text-slate-400 mt-0.5">Histórico individual de entradas na mesa</p>
+
       <div class="mt-4 space-y-3">
-        <div id="editBuyinsListContainer" class="max-h-48 overflow-y-auto space-y-2"></div>
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Entradas Registradas</div>
+        <div id="editBuyinsListContainer" class="max-h-48 overflow-y-auto space-y-2">
+          <!-- Buyins list -->
+        </div>
+
+        <!-- Adicionar nova entrada pelo modal -->
         <div class="pt-3 border-t border-white/10 flex gap-2">
           <input id="editModalNewBuyin" type="number" step="0.01" placeholder="Nova entrada (R$)" class="flex-1 py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-mono outline-none" />
-          <button onclick="submitNewBuyinFromEditModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs">+ Entrada</button>
+          <button onclick="submitNewBuyinFromEditModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs">
+            + Entrada
+          </button>
         </div>
+
+        <!-- Ajustar saída (se já saiu) ou reabrir -->
         <div id="editCashedOutSection" class="pt-3 border-t border-white/10 space-y-2 hidden">
           <div class="text-xs font-bold text-slate-300">Status de Saída</div>
           <div class="flex items-center gap-2">
             <input id="editFinalAmountInput" type="number" step="0.01" placeholder="Valor final (R$)" class="flex-1 py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-mono outline-none" />
-            <button onclick="submitUpdateFinalAmount()" class="px-3 py-2 rounded-xl bg-amber-500 text-black font-bold text-xs">Atualizar</button>
-            <button onclick="submitReopenPlayer()" class="px-3 py-2 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold text-xs">Reabrir</button>
+            <button onclick="submitUpdateFinalAmount()" class="px-3 py-2 rounded-xl bg-amber-500 text-black font-bold text-xs">
+              Atualizar
+            </button>
+            <button onclick="submitReopenPlayer()" class="px-3 py-2 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold text-xs">
+              Reabrir
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Encerrar Mesa -->
+  <!-- Modal 8: Encerrar Mesa -->
   <div id="modalCloseTable" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4 overflow-y-auto">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-md w-full border border-white/10 shadow-2xl relative my-6">
       <button onclick="closeModal('modalCloseTable')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-      <h3 class="text-lg font-bold text-white mb-1">Encerrar Mesa</h3>
-      <p class="text-xs text-slate-400 mb-4">Informe o valor em fichas dos jogadores ainda ativos.</p>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Encerrar Mesa</h3>
+          <p class="text-xs text-slate-400">Informe com quanto cada participante ainda ativo terminou</p>
+        </div>
+      </div>
+
       <div id="closeTableActivePlayersPrompt" class="space-y-3 max-h-60 overflow-y-auto my-4 pr-1"></div>
+
       <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal('modalCloseTable')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-        <button type="button" onclick="submitCloseTable()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs">Finalizar Mesa</button>
+        <button type="button" onclick="closeModal('modalCloseTable')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">
+          Cancelar
+        </button>
+        <button type="button" onclick="submitCloseTable()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-600/25 active:scale-95 transition-all">
+          Finalizar Mesa
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Cadastrar Jogador -->
+  <!-- Modal 9: Cadastrar / Editar Jogador no Diretório -->
   <div id="modalNewPlayer" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative">
       <button onclick="closeModal('modalNewPlayer')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+
       <h3 id="playerModalTitle" class="text-lg font-bold text-white mb-4">Cadastrar Amigo</h3>
+
       <form onsubmit="submitSavePlayer(event)" class="space-y-3.5">
         <input type="hidden" id="editPlayerDirectoryId" value="" />
+
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Nome Completo</label>
-          <input id="directoryPlayerName" type="text" placeholder="Ex: Vini Castro" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm outline-none" />
+          <input id="directoryPlayerName" type="text" placeholder="Ex: Vini Castro" required class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm focus:border-emerald-500 outline-none" />
         </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Apelido (opcional)</label>
-          <input id="directoryPlayerNickname" type="text" placeholder="Ex: vinicastrolima" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm outline-none" />
+          <input id="directoryPlayerNickname" type="text" placeholder="Ex: vinicastrolima" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm focus:border-emerald-500 outline-none" />
         </div>
+
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Chave PIX</label>
-          <input id="directoryPlayerPix" type="text" placeholder="CPF, e-mail ou telefone" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm outline-none" />
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Chave PIX (para receber os acertos)</label>
+          <input id="directoryPlayerPix" type="text" placeholder="CPF, e-mail ou telefone" class="w-full py-2.5 px-3.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm focus:border-emerald-500 outline-none" />
         </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Cor do Avatar</label>
-          <input id="directoryPlayerColor" type="color" value="#10b981" class="w-10 h-10 rounded-xl bg-transparent border border-white/10 cursor-pointer" />
+          <div class="flex items-center gap-2">
+            <input id="directoryPlayerColor" type="color" value="#10b981" class="w-10 h-10 rounded-xl bg-transparent border border-white/10 cursor-pointer" />
+            <span class="text-xs text-slate-400">Escolha a cor de destaque</span>
+          </div>
         </div>
+
         <div class="flex gap-2 pt-2">
-          <button type="button" onclick="closeModal('modalNewPlayer')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs">Salvar</button>
+          <button type="button" onclick="closeModal('modalNewPlayer')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">
+            Salvar
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Entrar por Código -->
+  <!-- Modal 10: Entrar por Código -->
   <div id="modalEnterCode" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-white/10 shadow-2xl relative text-center">
       <button onclick="closeModal('modalEnterCode')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+
       <h3 class="text-lg font-bold text-white">Entrar em Mesa</h3>
       <p class="text-xs text-slate-400 mt-1 mb-4">Digite o código de 6 dígitos da mesa (ex: DEMO77)</p>
+
       <form onsubmit="submitEnterCode(event)" class="space-y-4">
-        <input id="enterTableCodeInput" type="text" maxlength="12" placeholder="CÓDIGO" class="w-full text-center uppercase tracking-widest font-mono text-xl py-3 px-4 rounded-xl bg-black/40 border border-white/15 text-emerald-400 font-bold outline-none" required autofocus />
+        <input id="enterTableCodeInput" type="text" maxlength="12" placeholder="CÓDIGO" class="w-full text-center uppercase tracking-widest font-mono text-xl py-3 px-4 rounded-xl bg-black/40 border border-white/15 text-emerald-400 font-bold focus:border-emerald-500 outline-none" required autofocus />
+
         <div class="flex gap-2">
-          <button type="button" onclick="closeModal('modalEnterCode')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs">Abrir Mesa</button>
+          <button type="button" onclick="closeModal('modalEnterCode')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20">
+            Abrir Mesa
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Detalhes de Snapshot Histórico -->
+  <!-- Modal 11: Detalhes de Snapshot Histórico -->
   <div id="modalHistoryDetail" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4 overflow-y-auto">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-white/10 shadow-2xl relative my-6">
       <button onclick="closeModal('modalHistoryDetail')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-      <h3 id="historyDetailTitle" class="text-lg font-bold text-white">Detalhes da Mesa</h3>
-      <p id="historyDetailSubtitle" class="text-xs text-slate-400 mb-4">Encerrada</p>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+          <i data-lucide="archive" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="historyDetailTitle" class="text-lg font-bold text-white">Detalhes da Mesa</h3>
+          <p id="historyDetailSubtitle" class="text-xs text-slate-400">Encerrada em --/--/----</p>
+        </div>
+      </div>
+
       <div id="historyDetailContent" class="space-y-4 max-h-[65vh] overflow-y-auto pr-1"></div>
     </div>
   </div>
 
-  <!-- Modal: Alternar / Trocar Mesa -->
+  <!-- Modal 12: Trocar / Selecionar Mesa -->
   <div id="modalTableSwitcher" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm items-center justify-center p-4 overflow-y-auto">
     <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-md w-full border border-white/10 shadow-2xl relative my-6">
       <button onclick="closeModal('modalTableSwitcher')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <div class="flex items-center gap-2.5 mb-4">
-        <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-          <i data-lucide="layers" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <h3 class="text-base font-bold text-white">Alternar Mesa</h3>
-          <p class="text-xs text-slate-400">Escolha uma mesa aberta ou crie outra</p>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Alternar Mesa</h3>
+            <p class="text-xs text-slate-400">Escolha uma mesa aberta ou crie outra</p>
+          </div>
         </div>
       </div>
 
@@ -815,100 +1003,124 @@
     </div>
   </div>
 
-  <!-- CLIENT-SIDE APP LOGIC -->
+  <!-- ============================================================= -->
+  <!-- FRONTEND APPLICATION JAVASCRIPT ENGINE                        -->
+  <!-- ============================================================= -->
   <script>
-    // Extract Path Routing (/mesa/CODE, /ranking, /jogadores, /admin)
-    function parseInitialRoute() {
-      const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
-      const parts = path.split('/');
-      if (parts[0] === 'mesa' && parts[1]) {
-        return { tab: 'table', code: parts[1].toUpperCase() };
-      }
-      if (['ranking', 'jogadores', 'admin'].includes(parts[0])) {
-        const tabMap = { 'ranking': 'ranking', 'jogadores': 'players', 'admin': 'admin' };
-        return { tab: tabMap[parts[0]], code: null };
-      }
-      return { tab: 'table', code: null };
-    }
-
-    const route = parseInitialRoute();
+    // Initial State Injected by Blade
+    const INITIAL_CODE = @json($initialCode ?? null);
+    const INITIAL_TAB = @json($initialTab ?? 'table');
 
     // App State
     const state = {
-      apiBase: (window.ALAPOKER_CONFIG && window.ALAPOKER_CONFIG.API_BASE_URL) 
-        ? window.ALAPOKER_CONFIG.API_BASE_URL 
-        : (localStorage.getItem('alapoker_api_base') || '/api'),
-      activeCode: route.code || localStorage.getItem('alapoker_active_code') || 'DEMO77',
-      currentTab: route.tab,
+      activeCode: INITIAL_CODE || localStorage.getItem('alapoker_active_code') || 'DEMO77',
+      currentTab: INITIAL_TAB,
       tableData: null,
       isManager: false,
       managerPin: null,
       playersCatalog: [],
       hallOfFame: [],
       adminUnlocked: false,
+      editingTablePlayerId: null,
       selectedBuyinPreset: 100,
       pollingInterval: null,
     };
 
+    // Format Currency (BRL)
     function fmtMoney(val) {
       const num = Number(val || 0);
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
     }
 
+    // Escape HTML
     function escapeHtml(str) {
       return String(str || '').replace(/[&<>"']/g, s => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
       }[s]));
     }
 
+    // Toast Notification
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
       const text = document.getElementById('toastText');
       const icon = document.getElementById('toastIcon');
 
       text.textContent = message;
-      icon.className = type === 'error' ? 'w-4 h-4 text-red-400 shrink-0' : (type === 'warn' ? 'w-4 h-4 text-amber-400 shrink-0' : 'w-4 h-4 text-emerald-400 shrink-0');
+      if (type === 'error') {
+        icon.className = 'w-4 h-4 text-red-400 shrink-0';
+      } else if (type === 'warn') {
+        icon.className = 'w-4 h-4 text-amber-400 shrink-0';
+      } else {
+        icon.className = 'w-4 h-4 text-emerald-400 shrink-0';
+      }
 
       toast.classList.remove('opacity-0', 'translate-y-4');
       toast.classList.add('opacity-100', 'translate-y-0');
 
-      if (navigator.vibrate) navigator.vibrate(15);
+      if (navigator.vibrate) {
+        navigator.vibrate(15);
+      }
+
       setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', 'translate-y-4');
       }, 3000);
     }
 
+    // Modal Control
     function openModal(id) {
       const el = document.getElementById(id);
-      if (el) { el.classList.remove('hidden'); el.classList.add('flex'); lucide.createIcons(); }
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+      lucide.createIcons();
     }
 
     function closeModal(id) {
       const el = document.getElementById(id);
-      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+      if (!el) return;
+      el.classList.add('hidden');
+      el.classList.remove('flex');
     }
 
+    // Switch Tabs
     function switchTab(tabName, event) {
       if (event) event.preventDefault();
       state.currentTab = tabName;
 
+      // Update URL hash/path without reload
       if (tabName === 'table') {
         window.history.replaceState(null, '', state.activeCode ? `/mesa/${state.activeCode}` : '/');
       } else {
-        const slug = tabName === 'players' ? 'jogadores' : tabName;
-        window.history.replaceState(null, '', `/${slug}`);
+        window.history.replaceState(null, '', `/${tabName}`);
       }
 
+      // Hide all sections
       ['table', 'ranking', 'players', 'admin'].forEach(t => {
         document.getElementById(`section-${t}`).classList.add('hidden');
+        
+        // Desktop nav tab styling
         const dBtn = document.getElementById(`nav-tab-${t}`);
-        if (dBtn) dBtn.className = t === tabName ? 'nav-tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-white bg-emerald-500/20 border border-emerald-500/30' : 'nav-tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5';
+        if (dBtn) {
+          if (t === tabName) {
+            dBtn.className = 'nav-tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-white bg-emerald-500/20 border border-emerald-500/30';
+          } else {
+            dBtn.className = 'nav-tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5';
+          }
+        }
 
+        // Mobile nav tab styling
         const mBtn = document.getElementById(`mobile-tab-${t}`);
-        if (mBtn) mBtn.className = t === tabName ? 'flex flex-col items-center justify-center gap-1 text-emerald-400 font-bold' : 'flex flex-col items-center justify-center gap-1 text-slate-400 font-medium';
+        if (mBtn) {
+          if (t === tabName) {
+            mBtn.className = 'flex flex-col items-center justify-center gap-1 text-emerald-400 font-bold';
+          } else {
+            mBtn.className = 'flex flex-col items-center justify-center gap-1 text-slate-400 font-medium';
+          }
+        }
       });
 
+      // Show active section
       document.getElementById(`section-${tabName}`).classList.remove('hidden');
       lucide.createIcons();
 
@@ -917,11 +1129,11 @@
       if (tabName === 'admin') loadAdminOverview();
     }
 
-    // API Fetch Wrapper
-    async function apiFetch(endpoint, options = {}) {
-      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-      const url = `${state.apiBase}${cleanEndpoint}`;
+    // ==========================================
+    // API CALLS & DATA HANDLING
+    // ==========================================
 
+    async function apiFetch(url, options = {}) {
       const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -935,7 +1147,9 @@
       try {
         const res = await fetch(url, { ...options, headers });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Erro na requisição');
+        if (!res.ok) {
+          throw new Error(data.message || 'Erro na requisição');
+        }
         return data;
       } catch (err) {
         showToast(err.message, 'error');
@@ -951,39 +1165,47 @@
       }
 
       try {
-        const data = await apiFetch(`/tables/${state.activeCode}`);
+        const data = await apiFetch(`/api/tables/${state.activeCode}`);
         state.tableData = data;
         state.isManager = data.is_manager;
         renderActiveTable(data);
       } catch (err) {
-        if (!silent) renderNoTableState();
+        if (!silent) {
+          renderNoTableState();
+        }
       }
     }
 
+    // Render Active Table
     function renderActiveTable(data) {
-      document.getElementById('noTableState').classList.add('hidden');
-      document.getElementById('activeTableState').classList.remove('hidden');
+      const noState = document.getElementById('noTableState');
+      const activeState = document.getElementById('activeTableState');
+      noState.classList.add('hidden');
+      activeState.classList.remove('hidden');
 
+      // Top Table Info
       const topIndicator = document.getElementById('topTableIndicator');
       topIndicator.classList.remove('hidden');
       topIndicator.classList.add('flex');
       document.getElementById('topTableName').textContent = data.table.name;
       document.getElementById('topTableCode').textContent = data.table.code;
+
       document.getElementById('activeTableName').textContent = data.table.name;
       document.getElementById('activeTableCodeBadge').textContent = data.table.code;
-
+      
       const isClosed = data.table.status === 'closed';
       const statusBadge = document.getElementById('tableLiveStatusBadge');
       if (isClosed) {
-        statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold uppercase bg-slate-500/20 text-slate-300 border border-slate-500/30';
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold tracking-wide uppercase bg-slate-500/20 text-slate-300 border border-slate-500/30';
         statusBadge.innerHTML = 'ENCERRADA';
-        document.getElementById('tableSubtitle').textContent = `Encerrada • Total de ${fmtMoney(data.summary.total_money)}`;
+        document.getElementById('tableSubtitle').textContent = `Encerrada • Total de R$ ${data.summary.total_money.toFixed(2)}`;
       } else {
-        statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold tracking-wide uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
         statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> AO VIVO';
         document.getElementById('tableSubtitle').textContent = 'Em andamento • BRL Dinheiro';
       }
 
+      // Stats Cards
       document.getElementById('statTotalMoney').textContent = fmtMoney(data.summary.total_money);
       document.getElementById('statActivePlayers').innerHTML = `${data.summary.active_players} <span class="text-xs text-slate-400 font-normal">ativos</span>`;
       document.getElementById('statTotalPlayersSubtitle').textContent = `${data.summary.total_players} participantes total`;
@@ -998,6 +1220,7 @@
         topWinnerProfEl.textContent = '—';
       }
 
+      // Manager Toggle & Button
       const btnManager = document.getElementById('btnManagerAction');
       const btnCloseTable = document.getElementById('btnCloseTableBtn');
       const managerBanner = document.getElementById('managerActionBanner');
@@ -1007,23 +1230,33 @@
       if (state.isManager) {
         document.getElementById('statControlMode').textContent = 'Gerente Ativo';
         document.getElementById('statControlHint').textContent = 'Permissão total de edição';
+        
         btnManager.className = 'flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5';
         btnManager.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i> Bloquear (Sair)';
 
         if (!isClosed) {
-          btnCloseTable.classList.remove('hidden'); btnCloseTable.classList.add('flex');
-          managerBanner.classList.remove('hidden'); managerBanner.classList.add('flex');
+          btnCloseTable.classList.remove('hidden');
+          btnCloseTable.classList.add('flex');
+          managerBanner.classList.remove('hidden');
+          managerBanner.classList.add('flex');
           btnDesktopAddPlayer.classList.remove('hidden');
         } else {
-          btnCloseTable.classList.add('hidden'); managerBanner.classList.add('hidden'); btnDesktopAddPlayer.classList.add('hidden');
+          btnCloseTable.classList.add('hidden');
+          managerBanner.classList.add('hidden');
+          btnDesktopAddPlayer.classList.add('hidden');
         }
+
         pinStatusBadge.innerHTML = '<span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"><i data-lucide="check" class="w-3.5 h-3.5"></i> Gerente</span>';
       } else {
         document.getElementById('statControlMode').textContent = 'Espectador';
         document.getElementById('statControlHint').textContent = 'Modo somente leitura';
-        btnManager.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5';
+
+        btnManager.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/10';
         btnManager.innerHTML = '<i data-lucide="key" class="w-3.5 h-3.5"></i> Desbloquear Edição';
-        btnCloseTable.classList.add('hidden'); managerBanner.classList.add('hidden'); btnDesktopAddPlayer.classList.add('hidden');
+
+        btnCloseTable.classList.add('hidden');
+        managerBanner.classList.add('hidden');
+        btnDesktopAddPlayer.classList.add('hidden');
         pinStatusBadge.innerHTML = '<span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 text-slate-400 border border-white/10"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Espectador</span>';
       }
 
@@ -1039,16 +1272,22 @@
         }
       }
 
+      // Render Players List
       renderPlayersList(data.players, isClosed);
+
+      // Render Ranking
       renderTableRanking(data.ranking);
+
+      // Render Settlements
       renderTableSettlements(data.settlements);
+
       lucide.createIcons();
     }
 
     // Modal de Alternar Mesas
     async function openTableSwitcherModal() {
       try {
-        const res = await apiFetch('/tables');
+        const res = await apiFetch('/api/tables');
         const container = document.getElementById('tableSwitcherList');
         if (res.tables && res.tables.length > 0) {
           container.innerHTML = res.tables.map(t => {
@@ -1076,26 +1315,37 @@
       } catch {}
     }
 
+    // Render Players Cards
     function renderPlayersList(players, isClosed) {
       const container = document.getElementById('tablePlayersList');
       if (!players || players.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Nenhum participante na mesa ainda. Clique em <b>+ Participante</b> para começar.</div>';
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 text-sm">
+            Nenhum participante na mesa ainda. Clique em <b>+ Participante</b> para começar.
+          </div>
+        `;
         return;
       }
 
       container.innerHTML = players.map(p => {
         const isCashedOut = p.status === 'cashed_out';
         let profitBadge = '<span class="text-slate-500">—</span>';
+
         if (p.profit !== null) {
-          if (p.profit > 0) profitBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">+ ${fmtMoney(p.profit)}</span>`;
-          else if (p.profit < 0) profitBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-red-500/15 text-red-400 border border-red-500/30">- ${fmtMoney(Math.abs(p.profit))}</span>`;
-          else profitBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30">0,00</span>`;
+          if (p.profit > 0) {
+            profitBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">+ ${fmtMoney(p.profit)}</span>`;
+          } else if (p.profit < 0) {
+            profitBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-red-500/15 text-red-400 border border-red-500/30">- ${fmtMoney(Math.abs(p.profit))}</span>`;
+          } else {
+            profitBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30">0,00</span>`;
+          }
         }
 
         const initials = p.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
         return `
           <div class="p-3.5 sm:p-4 rounded-xl glass-card border border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isCashedOut ? 'opacity-70 bg-black/20' : ''}">
+            
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-md" style="background-color: ${p.avatar_color || '#10b981'}">
                 ${initials}
@@ -1104,59 +1354,76 @@
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-sm text-white">${escapeHtml(p.name)}</span>
                   ${p.nickname ? `<span class="text-xs text-slate-400">@${escapeHtml(p.nickname)}</span>` : ''}
-                  ${isCashedOut ? '<span class="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-500/20 text-slate-400 border border-slate-500/30">Saiu</span>' : '<span class="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Ativo</span>'}
+                  ${isCashedOut 
+                    ? '<span class="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-500/20 text-slate-400 border border-slate-500/30">Saiu</span>' 
+                    : '<span class="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Ativo</span>'}
                 </div>
-                <div class="text-[11px] text-slate-400 mt-0.5">Entradas: <b class="text-slate-300">${p.buyins_count}</b> • Total: <b class="text-emerald-400 font-mono">${fmtMoney(p.total_buyin)}</b></div>
+                <div class="text-[11px] text-slate-400 mt-0.5">
+                  Entradas: <b class="text-slate-300">${p.buyins_count}</b> • Total: <b class="text-emerald-400 font-mono">${fmtMoney(p.total_buyin)}</b>
+                </div>
               </div>
             </div>
 
+            <!-- Money & Profit stats -->
             <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-white/5 pt-2 sm:pt-0">
               <div class="text-left sm:text-right">
                 <span class="text-[10px] text-slate-400 block uppercase font-medium">Saiu Com</span>
                 <span class="text-xs font-mono font-bold text-slate-200">${p.final_amount !== null ? fmtMoney(p.final_amount) : '—'}</span>
               </div>
+
               <div class="text-left sm:text-right">
                 <span class="text-[10px] text-slate-400 block uppercase font-medium">Lucro / Prejuízo</span>
                 <div>${profitBadge}</div>
               </div>
 
+              <!-- Manager Actions (only if unlocked) -->
               ${(state.isManager && !isClosed) ? `
                 <div class="flex items-center gap-1.5 shrink-0">
-                  <button onclick="openAddBuyinModal(${p.id}, '${escapeHtml(p.name)}', ${p.total_buyin})" title="+ Buy-in" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1">
+                  <button onclick="openAddBuyinModal(${p.id}, '${escapeHtml(p.name)}', ${p.total_buyin})" title="+ Buy-in" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all active:scale-95 flex items-center gap-1">
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i> Fichas
                   </button>
-                  <button onclick="openEditPlayerModal(${p.id})" title="Editar" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300">
+
+                  <button onclick="openEditPlayerModal(${p.id})" title="Editar entradas" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition-all active:scale-95">
                     <i data-lucide="settings-2" class="w-4 h-4"></i>
                   </button>
+
                   ${!isCashedOut ? `
-                    <button onclick="openCashoutModal(${p.id}, '${escapeHtml(p.name)}', ${p.total_buyin})" title="Sair" class="px-2.5 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1">
+                    <button onclick="openCashoutModal(${p.id}, '${escapeHtml(p.name)}', ${p.total_buyin})" title="Registrar Saída" class="px-2.5 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-xs font-bold transition-all active:scale-95 flex items-center gap-1">
                       <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sair
                     </button>
                   ` : `
-                    <button onclick="quickReopen(${p.id})" class="px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 text-xs font-bold">Reabrir</button>
+                    <button onclick="quickReopen(${p.id})" title="Voltar para a mesa" class="px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 text-xs font-bold transition-all active:scale-95">
+                      Reabrir
+                    </button>
                   `}
                 </div>
               ` : ''}
+
             </div>
+
           </div>
         `;
       }).join('');
     }
 
+    // Render Table Ranking
     function renderTableRanking(ranking) {
       const container = document.getElementById('tableRankingList');
       if (!ranking || ranking.length === 0) {
         container.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Nenhum jogador encerrou a participação ainda.</div>';
         return;
       }
+
       container.innerHTML = ranking.map((r, idx) => {
         const pos = idx + 1;
         const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
         let valBadge = '<span class="text-slate-400 font-mono text-xs">Em jogo</span>';
+
         if (r.profit !== null) {
           const cls = r.profit > 0 ? 'text-emerald-400' : r.profit < 0 ? 'text-red-400' : 'text-amber-400';
           valBadge = `<span class="font-mono text-xs font-bold ${cls}">${r.profit > 0 ? '+' : ''}${fmtMoney(r.profit)}</span>`;
         }
+
         return `
           <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
             <div class="flex items-center gap-2.5">
@@ -1169,12 +1436,14 @@
       }).join('');
     }
 
+    // Render Table Settlements (Quem Paga Quem)
     function renderTableSettlements(settlements) {
       const container = document.getElementById('tableSettlementsList');
       if (!settlements || settlements.length === 0) {
         container.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Nenhum acerto pendente no momento.</div>';
         return;
       }
+
       container.innerHTML = settlements.map(s => `
         <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div class="flex items-center gap-2 text-xs">
@@ -1182,10 +1451,11 @@
             <span class="text-slate-400">paga para</span>
             <b class="text-emerald-400">${escapeHtml(s.to)}</b>
           </div>
+
           <div class="flex items-center justify-between sm:justify-end gap-3">
             <span class="font-mono font-bold text-sm text-white">${fmtMoney(s.value)}</span>
             ${s.to_pix ? `
-              <button onclick="copyPixKey('${escapeHtml(s.to_pix)}')" class="px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
+              <button onclick="copyPixKey('${escapeHtml(s.to_pix)}')" class="px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold flex items-center gap-1 transition-all">
                 <i data-lucide="copy" class="w-3 h-3"></i> PIX: ${escapeHtml(s.to_pix)}
               </button>
             ` : ''}
@@ -1194,13 +1464,15 @@
       `).join('');
     }
 
+    // Render No Table Screen
     async function renderNoTableState() {
       document.getElementById('noTableState').classList.remove('hidden');
       document.getElementById('activeTableState').classList.add('hidden');
       document.getElementById('topTableIndicator').classList.add('hidden');
 
+      // Fetch Recent Tables
       try {
-        const res = await apiFetch('/tables');
+        const res = await apiFetch('/api/tables');
         const container = document.getElementById('recentTablesContainer');
         if (res.tables && res.tables.length > 0) {
           container.innerHTML = res.tables.slice(0, 5).map(t => `
@@ -1214,10 +1486,13 @@
               </span>
             </div>
           `).join('');
+        } else {
+          container.innerHTML = '<span class="text-xs text-slate-400">Nenhuma mesa anterior registrada.</span>';
         }
       } catch {}
     }
 
+    // Switch Table
     function switchTable(code) {
       state.activeCode = code;
       localStorage.setItem('alapoker_active_code', code);
@@ -1226,12 +1501,16 @@
       switchTab('table');
     }
 
+    // Handle Manager PIN Verification
     function handleManagerToggle() {
       if (state.isManager) {
+        // Bloquear
         state.isManager = false;
         state.managerPin = null;
-        if (state.activeCode) sessionStorage.removeItem(`alapoker_pin_${state.activeCode}`);
-        showToast('Modo Gerente desativado.', 'warn');
+        if (state.activeCode) {
+          sessionStorage.removeItem(`alapoker_pin_${state.activeCode}`);
+        }
+        showToast('Modo Gerente desativado. Você agora é espectador.', 'warn');
         loadTableData();
       } else {
         openModal('modalPin');
@@ -1242,11 +1521,13 @@
       e.preventDefault();
       const pin = document.getElementById('tablePinInput').value.trim();
       if (!pin) return;
+
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/verify-pin`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/verify-pin`, {
           method: 'POST',
           body: JSON.stringify({ pin })
         });
+
         if (res.success) {
           state.isManager = true;
           state.managerPin = pin;
@@ -1256,14 +1537,21 @@
           showToast(res.message);
           loadTableData();
         }
-      } catch {}
+      } catch (err) {
+        // já mostra toast
+      }
     }
+
+    // ==========================================
+    // SHARE & QR CODE
+    // ==========================================
 
     function openShareModal() {
       if (!state.tableData) return;
       const shareUrl = `${window.location.origin}/mesa/${state.activeCode}`;
       document.getElementById('shareUrlInput').value = shareUrl;
 
+      // Render QR Code in Canvas
       const qrcodeContainer = document.getElementById('qrcodeCanvas');
       qrcodeContainer.innerHTML = '';
       new QRCode(qrcodeContainer, {
@@ -1274,6 +1562,7 @@
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.M
       });
+
       openModal('modalShare');
     }
 
@@ -1281,22 +1570,22 @@
       const input = document.getElementById('shareUrlInput');
       input.select();
       navigator.clipboard.writeText(input.value);
-      showToast('Link copiado para o WhatsApp!');
+      showToast('Link copiado para a área de transferência! Cole no WhatsApp.');
     }
 
     function shareOnWhatsApp() {
       const url = `${window.location.origin}/mesa/${state.activeCode}`;
-      const msg = encodeURIComponent(`♠️ AlaPoker Ao Vivo! Acompanhe o pote da nossa mesa em tempo real:\n${url}`);
+      const msg = encodeURIComponent(`♠️ AlaPoker Ao Vivo! Acompanhe os potes e a classificação da nossa mesa em tempo real:\n${url}`);
       window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
     }
 
     async function copyWhatsAppSummary() {
       if (!state.activeCode) return;
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/share-summary`);
+        const res = await apiFetch(`/api/tables/${state.activeCode}/share-summary`);
         if (res.whatsapp_text) {
           navigator.clipboard.writeText(res.whatsapp_text);
-          showToast('Resumo copiado com sucesso!');
+          showToast('Resumo completo copiado com sucesso! Só colar no grupo de amigos.');
         }
       } catch {}
     }
@@ -1306,7 +1595,10 @@
       showToast(`Chave PIX copiada: ${key}`);
     }
 
-    // Presets e Ações de Fichas
+    // ==========================================
+    // BUY-IN & CASHOUT ACTIONS
+    // ==========================================
+
     let currentBuyinTablePlayerId = null;
     function openAddBuyinModal(tablePlayerId, playerName, totalBuyin) {
       currentBuyinTablePlayerId = tablePlayerId;
@@ -1324,8 +1616,9 @@
       e.preventDefault();
       const amount = parseFloat(document.getElementById('addBuyinCustomAmount').value);
       if (!amount || amount <= 0) return;
+
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players/${currentBuyinTablePlayerId}/buyins`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${currentBuyinTablePlayerId}/buyins`, {
           method: 'POST',
           body: JSON.stringify({ amount })
         });
@@ -1340,6 +1633,7 @@
     function openCashoutModal(tablePlayerId, playerName, totalBuyin) {
       currentCashoutTablePlayerId = tablePlayerId;
       currentCashoutTotalBuyin = totalBuyin;
+
       document.getElementById('cashoutPlayerName').textContent = playerName;
       document.getElementById('cashoutTotalBuyinDisplay').textContent = fmtMoney(totalBuyin);
       document.getElementById('cashoutAmountInput').value = '';
@@ -1350,8 +1644,13 @@
     function updateCashoutPreview() {
       const raw = document.getElementById('cashoutAmountInput').value;
       const preview = document.getElementById('cashoutPreviewValue');
-      if (!raw || isNaN(raw)) { preview.textContent = '—'; return; }
-      const diff = parseFloat(raw) - currentCashoutTotalBuyin;
+      if (!raw || isNaN(raw)) {
+        preview.textContent = '—';
+        return;
+      }
+
+      const final = parseFloat(raw);
+      const diff = final - currentCashoutTotalBuyin;
       if (diff > 0) {
         preview.className = 'text-sm font-bold font-mono text-emerald-400 mt-0.5';
         preview.textContent = `LUCRO DE + ${fmtMoney(diff)}`;
@@ -1368,8 +1667,9 @@
       e.preventDefault();
       const finalAmount = parseFloat(document.getElementById('cashoutAmountInput').value);
       if (isNaN(finalAmount) || finalAmount < 0) return;
+
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players/${currentCashoutTablePlayerId}/cashout`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${currentCashoutTablePlayerId}/cashout`, {
           method: 'POST',
           body: JSON.stringify({ final_amount: finalAmount })
         });
@@ -1381,13 +1681,18 @@
 
     async function quickReopen(tablePlayerId) {
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players/${tablePlayerId}/reopen`, { method: 'POST' });
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${tablePlayerId}/reopen`, {
+          method: 'POST'
+        });
         showToast(res.message);
         loadTableData();
       } catch {}
     }
 
-    // Edit Player Modal
+    // ==========================================
+    // EDIT PLAYER BUYINS MODAL
+    // ==========================================
+
     let currentEditingPlayerId = null;
     function openEditPlayerModal(tablePlayerId) {
       currentEditingPlayerId = tablePlayerId;
@@ -1405,8 +1710,14 @@
             <span class="text-slate-400 text-[11px] block">Entrada #${idx + 1} às ${b.created_at}</span>
           </div>
           <div class="flex items-center gap-1.5">
-            <button onclick="promptEditBuyin(${p.id}, ${b.id}, ${b.amount})" class="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-slate-300">Editar</button>
-            ${p.buyins.length > 1 ? `<button onclick="deleteBuyin(${p.id}, ${b.id})" class="px-2 py-1 rounded bg-red-500/10 text-red-400">Remover</button>` : ''}
+            <button onclick="promptEditBuyin(${p.id}, ${b.id}, ${b.amount})" class="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-slate-300">
+              Editar
+            </button>
+            ${p.buyins.length > 1 ? `
+              <button onclick="deleteBuyin(${p.id}, ${b.id})" class="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400">
+                Remover
+              </button>
+            ` : ''}
           </div>
         </div>
       `).join('');
@@ -1425,8 +1736,9 @@
     async function promptEditBuyin(tpId, buyinId, curAmount) {
       const val = prompt('Novo valor da entrada (R$):', curAmount);
       if (!val || isNaN(val)) return;
+
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players/${tpId}/buyins/${buyinId}`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${tpId}/buyins/${buyinId}`, {
           method: 'PUT',
           body: JSON.stringify({ amount: parseFloat(val) })
         });
@@ -1439,7 +1751,9 @@
     async function deleteBuyin(tpId, buyinId) {
       if (!confirm('Remover esta entrada?')) return;
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players/${tpId}/buyins/${buyinId}`, { method: 'DELETE' });
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${tpId}/buyins/${buyinId}`, {
+          method: 'DELETE'
+        });
         showToast(res.message);
         loadTableData();
         openEditPlayerModal(tpId);
@@ -1449,8 +1763,9 @@
     async function submitNewBuyinFromEditModal() {
       const val = parseFloat(document.getElementById('editModalNewBuyin').value);
       if (!val || val <= 0) return;
+
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players/${currentEditingPlayerId}/buyins`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${currentEditingPlayerId}/buyins`, {
           method: 'POST',
           body: JSON.stringify({ amount: val })
         });
@@ -1464,12 +1779,13 @@
     async function submitUpdateFinalAmount() {
       const val = parseFloat(document.getElementById('editFinalAmountInput').value);
       if (isNaN(val) || val < 0) return;
+
       try {
-        await apiFetch(`/tables/${state.activeCode}/players/${currentEditingPlayerId}/cashout`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players/${currentEditingPlayerId}/cashout`, {
           method: 'POST',
           body: JSON.stringify({ final_amount: val })
         });
-        showToast('Valor atualizado.');
+        showToast('Valor de saída atualizado.');
         loadTableData();
         openEditPlayerModal(currentEditingPlayerId);
       } catch {}
@@ -1480,16 +1796,23 @@
       closeModal('modalEditPlayer');
     }
 
+    // ==========================================
+    // ADD PLAYER TO ACTIVE TABLE
+    // ==========================================
+
     async function openAddPlayerModal() {
       await loadPlayersCatalog();
       const select = document.getElementById('addPlayerSelect');
       select.innerHTML = '<option value="">-- Convidado Avulso (digite o nome) --</option>';
+
+      // Filtra jogadores já presentes
       const existingNames = (state.tableData?.players || []).map(p => p.name.toLowerCase());
       state.playersCatalog.forEach(p => {
         if (!existingNames.includes(p.name.toLowerCase())) {
           select.innerHTML += `<option value="${p.id}">${escapeHtml(p.name)} ${p.nickname ? `(@${escapeHtml(p.nickname)})` : ''}</option>`;
         }
       });
+
       document.getElementById('addPlayerCustomName').value = '';
       onAddPlayerSelectChange();
       openModal('modalAddPlayer');
@@ -1498,8 +1821,11 @@
     function onAddPlayerSelectChange() {
       const select = document.getElementById('addPlayerSelect');
       const box = document.getElementById('addPlayerCustomNameBox');
-      if (select.value) box.classList.add('hidden');
-      else box.classList.remove('hidden');
+      if (select.value) {
+        box.classList.add('hidden');
+      } else {
+        box.classList.remove('hidden');
+      }
     }
 
     async function submitAddPlayer(e) {
@@ -1507,14 +1833,23 @@
       const select = document.getElementById('addPlayerSelect');
       const customName = document.getElementById('addPlayerCustomName').value.trim();
       const buyin = parseFloat(document.getElementById('addPlayerBuyin').value);
-      const payload = { buyin_amount: buyin };
-      if (select.value) payload.player_id = select.value;
-      else {
-        if (!customName) { showToast('Informe o nome do participante.', 'warn'); return; }
+
+      const payload = {
+        buyin_amount: buyin
+      };
+
+      if (select.value) {
+        payload.player_id = select.value;
+      } else {
+        if (!customName) {
+          showToast('Informe o nome do participante.', 'warn');
+          return;
+        }
         payload.name = customName;
       }
+
       try {
-        const res = await apiFetch(`/tables/${state.activeCode}/players`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/players`, {
           method: 'POST',
           body: JSON.stringify(payload)
         });
@@ -1524,16 +1859,21 @@
       } catch {}
     }
 
+    // ==========================================
+    // CREATE NEW TABLE MODAL
+    // ==========================================
+
     async function openNewTableModal() {
       await loadPlayersCatalog();
       const container = document.getElementById('newTablePlayersSelector');
+
       if (state.playersCatalog.length === 0) {
-        container.innerHTML = '<div class="text-xs text-slate-400 p-2">Nenhum jogador cadastrado ainda.</div>';
+        container.innerHTML = '<div class="text-xs text-slate-400 p-2">Nenhum jogador cadastrado ainda. Você poderá adicionar convidados na mesa.</div>';
       } else {
         container.innerHTML = state.playersCatalog.map(p => `
           <label class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer text-xs">
             <div class="flex items-center gap-2">
-              <input type="checkbox" name="selected_players" value="${p.id}" class="rounded bg-black/40 border-white/20 text-emerald-500" />
+              <input type="checkbox" name="selected_players" value="${p.id}" class="rounded bg-black/40 border-white/20 text-emerald-500 focus:ring-0" />
               <span class="font-semibold text-white">${escapeHtml(p.name)}</span>
               ${p.nickname ? `<span class="text-slate-400 text-[11px]">@${escapeHtml(p.nickname)}</span>` : ''}
             </div>
@@ -1541,6 +1881,7 @@
           </label>
         `).join('');
       }
+
       openModal('modalNewTable');
     }
 
@@ -1555,27 +1896,45 @@
       const name = document.getElementById('newTableName').value.trim();
       const pin = document.getElementById('newTablePin').value.trim();
       const defaultBuyin = parseFloat(document.getElementById('newTableDefaultBuyin').value) || 100;
+
       const checkedBoxes = document.querySelectorAll('input[name="selected_players"]:checked');
-      const players = Array.from(checkedBoxes).map(b => ({ player_id: b.value, buyin: defaultBuyin }));
+      const players = Array.from(checkedBoxes).map(b => ({
+        player_id: b.value,
+        buyin: defaultBuyin
+      }));
 
       try {
-        const res = await apiFetch('/tables', {
+        const res = await apiFetch('/api/tables', {
           method: 'POST',
-          body: JSON.stringify({ name, pin, players })
+          body: JSON.stringify({
+            name,
+            pin,
+            players
+          })
         });
+
         closeModal('modalNewTable');
         showToast('Mesa criada com sucesso!');
         switchTable(res.code);
+
+        // Desbloqueia automaticamente como gerente
         state.isManager = true;
         state.managerPin = pin;
         sessionStorage.setItem(`alapoker_pin_${res.code}`, pin);
+
+        // Abre modal de compartilhar
         openShareModal();
       } catch {}
     }
 
+    // ==========================================
+    // CLOSE TABLE
+    // ==========================================
+
     function openCloseTableModal() {
       const activePlayers = (state.tableData?.players || []).filter(p => p.status === 'active');
       const container = document.getElementById('closeTableActivePlayersPrompt');
+
       if (activePlayers.length === 0) {
         container.innerHTML = '<div class="text-xs text-slate-300 p-2">Todos os participantes já saíram. Pronto para arquivar a mesa.</div>';
       } else {
@@ -1592,6 +1951,7 @@
           `).join('')}
         `;
       }
+
       openModal('modalCloseTable');
     }
 
@@ -1605,18 +1965,25 @@
       });
 
       try {
-        await apiFetch(`/tables/${state.activeCode}/close`, {
+        const res = await apiFetch(`/api/tables/${state.activeCode}/close`, {
           method: 'POST',
-          body: JSON.stringify({ final_amounts: finalAmounts })
+          body: JSON.stringify({
+            final_amounts: finalAmounts
+          })
         });
+
         closeModal('modalCloseTable');
-        showToast('Mesa encerrada com sucesso!');
+        showToast('Mesa encerrada com sucesso! Resumo salvo no histórico.');
         loadTableData();
         loadHallOfFame();
       } catch {}
     }
 
-    function openEnterCodeModal() { openModal('modalEnterCode'); }
+    // Enter by Code Modal
+    function openEnterCodeModal() {
+      openModal('modalEnterCode');
+    }
+
     function submitEnterCode(e) {
       e.preventDefault();
       const code = document.getElementById('enterTableCodeInput').value.trim().toUpperCase();
@@ -1625,10 +1992,13 @@
       switchTable(code);
     }
 
-    // Hall da Fama
+    // ==========================================
+    // HALL DA FAMA (RANKING GERAL ACUMULADO)
+    // ==========================================
+
     async function loadHallOfFame() {
       try {
-        const res = await apiFetch('/ranking');
+        const res = await apiFetch('/api/ranking');
         state.hallOfFame = res.leaderboard || [];
         renderHallOfFame(state.hallOfFame);
       } catch {}
@@ -1637,16 +2007,20 @@
     function renderHallOfFame(list) {
       const podium = document.getElementById('podiumContainer');
       const tableBody = document.getElementById('hallOfFameTableBody');
+
       if (!list || list.length === 0) {
         podium.innerHTML = '';
         tableBody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">Nenhum histórico registrado ainda.</td></tr>';
         return;
       }
+
+      // Podium: Top 3
       const top3 = list.slice(0, 3);
       podium.innerHTML = top3.map((p, idx) => {
         const medals = ['🥇 1º Lugar', '🥈 2º Lugar', '🥉 3º Lugar'];
         const borderColors = ['border-amber-500/40 bg-amber-500/5', 'border-slate-300/30 bg-slate-300/5', 'border-amber-700/30 bg-amber-700/5'];
         const profitClass = p.net_profit >= 0 ? 'text-emerald-400' : 'text-red-400';
+
         return `
           <div class="glass-card rounded-2xl p-5 border ${borderColors[idx]} text-center relative overflow-hidden">
             <span class="text-xs uppercase font-extrabold tracking-wider text-slate-300">${medals[idx]}</span>
@@ -1655,6 +2029,7 @@
             </div>
             <h3 class="text-base font-bold text-white truncate">${escapeHtml(p.name)}</h3>
             ${p.nickname ? `<span class="text-xs text-slate-400">@${escapeHtml(p.nickname)}</span>` : ''}
+
             <div class="mt-4 pt-3 border-t border-white/5 grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span class="text-[10px] text-slate-400 block uppercase">Lucro Geral</span>
@@ -1669,6 +2044,7 @@
         `;
       }).join('');
 
+      // Full Table
       tableBody.innerHTML = list.map((p, idx) => {
         const profitClass = p.net_profit >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
         return `
@@ -1691,10 +2067,13 @@
       }).join('');
     }
 
-    // Diretório de Jogadores
+    // ==========================================
+    // DIRETÓRIO DE JOGADORES FREQUENTES
+    // ==========================================
+
     async function loadPlayersCatalog() {
       try {
-        const res = await apiFetch('/players');
+        const res = await apiFetch('/api/players');
         state.playersCatalog = res.players || [];
         renderPlayersCatalog(state.playersCatalog);
       } catch {}
@@ -1703,9 +2082,10 @@
     function renderPlayersCatalog(players) {
       const grid = document.getElementById('playersCatalogGrid');
       if (!players || players.length === 0) {
-        grid.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-xs">Nenhum jogador cadastrado.</div>';
+        grid.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-xs">Nenhum jogador cadastrado. Adicione seus amigos acima.</div>';
         return;
       }
+
       grid.innerHTML = players.map(p => `
         <div class="glass-card rounded-2xl p-4 border border-white/[0.06] flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
@@ -1718,12 +2098,18 @@
               ${p.pix_key ? `<span class="text-[11px] text-emerald-400 font-mono block truncate max-w-[140px]">PIX: ${escapeHtml(p.pix_key)}</span>` : ''}
             </div>
           </div>
+
           <div class="flex items-center gap-1.5">
-            <button onclick="editDirectoryPlayer(${p.id})" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-            <button onclick="deleteDirectoryPlayer(${p.id}, '${escapeHtml(p.name)}')" class="p-2 rounded-lg bg-red-500/10 text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="editDirectoryPlayer(${p.id})" title="Editar" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-all">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deleteDirectoryPlayer(${p.id}, '${escapeHtml(p.name)}')" title="Excluir" class="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
           </div>
         </div>
       `).join('');
+
       lucide.createIcons();
     }
 
@@ -1740,6 +2126,7 @@
     function editDirectoryPlayer(id) {
       const p = state.playersCatalog.find(x => x.id === id);
       if (!p) return;
+
       document.getElementById('playerModalTitle').textContent = 'Editar Amigo';
       document.getElementById('editPlayerDirectoryId').value = p.id;
       document.getElementById('directoryPlayerName').value = p.name;
@@ -1756,13 +2143,24 @@
       const nickname = document.getElementById('directoryPlayerNickname').value.trim();
       const pix_key = document.getElementById('directoryPlayerPix').value.trim();
       const avatar_color = document.getElementById('directoryPlayerColor').value;
+
       const payload = { name, nickname, pix_key, avatar_color };
 
       try {
-        if (id) await apiFetch(`/players/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-        else await apiFetch('/players', { method: 'POST', body: JSON.stringify(payload) });
+        if (id) {
+          await apiFetch(`/api/players/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+          });
+          showToast('Jogador atualizado com sucesso!');
+        } else {
+          await apiFetch('/api/players', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          showToast('Jogador cadastrado com sucesso!');
+        }
         closeModal('modalNewPlayer');
-        showToast('Jogador salvo com sucesso!');
         loadPlayersCatalog();
       } catch {}
     }
@@ -1770,19 +2168,26 @@
     async function deleteDirectoryPlayer(id, name) {
       if (!confirm(`Remover ${name} do diretório?`)) return;
       try {
-        await apiFetch(`/players/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/players/${id}`, { method: 'DELETE' });
         showToast('Jogador removido.');
         loadPlayersCatalog();
       } catch {}
     }
 
-    // Admin
+    // ==========================================
+    // ADMIN DASHBOARD & HISTÓRICO
+    // ==========================================
+
     async function handleAdminUnlock(e) {
       e.preventDefault();
       const pin = document.getElementById('adminPinInput').value.trim();
       if (!pin) return;
+
       try {
-        const res = await apiFetch('/admin/verify-pin', { method: 'POST', body: JSON.stringify({ pin }) });
+        const res = await apiFetch('/api/admin/verify-pin', {
+          method: 'POST',
+          body: JSON.stringify({ pin })
+        });
         if (res.success) {
           state.adminUnlocked = true;
           sessionStorage.setItem('alapoker_admin_unlocked', 'true');
@@ -1807,15 +2212,18 @@
         document.getElementById('adminLockedState').classList.add('hidden');
         document.getElementById('adminUnlockedState').classList.remove('hidden');
       }
+
       if (!state.adminUnlocked) return;
+
       try {
-        const res = await apiFetch('/admin/overview');
+        const res = await apiFetch('/api/admin/overview');
         document.getElementById('adminTotalVolume').textContent = fmtMoney(res.stats.total_volume_brl);
         document.getElementById('adminTotalTables').textContent = res.stats.total_tables;
         document.getElementById('adminAveragePot').textContent = fmtMoney(res.stats.average_pot_brl);
         document.getElementById('adminTotalPlayers').textContent = res.stats.total_registered_players;
 
-        const histRes = await apiFetch('/history');
+        // Histórico
+        const histRes = await apiFetch('/api/history');
         renderAdminHistory(histRes.history || []);
       } catch {}
     }
@@ -1826,6 +2234,7 @@
         container.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Nenhuma mesa encerrada registrada.</div>';
         return;
       }
+
       container.innerHTML = history.map(h => `
         <div class="p-3.5 sm:p-4 rounded-xl glass-card border border-white/[0.06] flex items-center justify-between gap-3">
           <div>
@@ -1833,11 +2242,20 @@
               <span class="font-bold text-sm text-white">${escapeHtml(h.table_name)}</span>
               <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-white/5 text-slate-400">${h.table_code}</span>
             </div>
-            <span class="text-xs text-slate-400 block mt-0.5">${h.total_players} participantes • Total em jogo: <b class="text-emerald-400 font-mono">${fmtMoney(h.total_buyins)}</b></span>
+            <span class="text-xs text-slate-400 block mt-0.5">
+              ${h.total_players} participantes • Total em jogo: <b class="text-emerald-400 font-mono">${fmtMoney(h.total_buyins)}</b>
+            </span>
           </div>
+
           <div class="flex items-center gap-2">
-            ${h.top_player ? `<span class="hidden sm:inline-block text-xs text-amber-400 font-semibold">Líder: ${escapeHtml(h.top_player.name)} (+${fmtMoney(h.top_player.profit)})</span>` : ''}
-            <button onclick="viewHistoryDetail(${h.id})" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold">Ver Detalhes</button>
+            ${h.top_player ? `
+              <span class="hidden sm:inline-block text-xs text-amber-400 font-semibold">
+                Líder: ${escapeHtml(h.top_player.name)} (+${fmtMoney(h.top_player.profit)})
+              </span>
+            ` : ''}
+            <button onclick="viewHistoryDetail(${h.id})" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold transition-all">
+              Ver Detalhes
+            </button>
           </div>
         </div>
       `).join('');
@@ -1845,14 +2263,18 @@
 
     async function viewHistoryDetail(id) {
       try {
-        const res = await apiFetch(`/history/${id}`);
+        const res = await apiFetch(`/api/history/${id}`);
         document.getElementById('historyDetailTitle').textContent = res.table_name || 'Mesa';
-        document.getElementById('historyDetailSubtitle').textContent = `Encerrada • Total: ${fmtMoney(res.total_buyins)}`;
+        document.getElementById('historyDetailSubtitle').textContent = `Encerrada • Total de entradas: ${fmtMoney(res.total_buyins)}`;
+
         const container = document.getElementById('historyDetailContent');
+        
         let rankingHtml = (res.ranking || []).map((r, i) => `
           <div class="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] text-xs">
             <span>#${i + 1} <b>${escapeHtml(r.name)}</b></span>
-            <span class="font-mono ${r.profit > 0 ? 'text-emerald-400' : r.profit < 0 ? 'text-red-400' : 'text-slate-400'}">${r.profit > 0 ? '+' : ''}${fmtMoney(r.profit)}</span>
+            <span class="font-mono ${r.profit > 0 ? 'text-emerald-400' : r.profit < 0 ? 'text-red-400' : 'text-slate-400'}">
+              ${r.profit > 0 ? '+' : ''}${fmtMoney(r.profit)}
+            </span>
           </div>
         `).join('');
 
@@ -1873,43 +2295,28 @@
             ${settlementsHtml || '<div class="text-xs text-slate-500">Nenhum acerto pendente</div>'}
           </div>
         `;
+
         openModal('modalHistoryDetail');
       } catch {}
     }
 
-    // Config Modal (VPS API Connection)
-    function openApiConfigModal() {
-      document.getElementById('apiBaseUrlInput').value = state.apiBase;
-      openModal('modalApiConfig');
-    }
+    // ==========================================
+    // INITIALIZATION & BACKGROUND POLLING
+    // ==========================================
 
-    function saveApiConfig(e) {
-      e.preventDefault();
-      const val = document.getElementById('apiBaseUrlInput').value.trim();
-      if (!val) return;
-      state.apiBase = val.replace(/\/+$/, '');
-      localStorage.setItem('alapoker_api_base', state.apiBase);
-      closeModal('modalApiConfig');
-      showToast('Endereço da API atualizado!');
-      loadTableData();
-    }
-
-    function resetApiConfig() {
-      localStorage.removeItem('alapoker_api_base');
-      state.apiBase = '/api';
-      document.getElementById('apiBaseUrlInput').value = state.apiBase;
-      showToast('Restaurado para padrão relativo.');
-    }
-
-    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
+      // Check for saved manager PIN for this table
       if (state.activeCode) {
         state.managerPin = sessionStorage.getItem(`alapoker_pin_${state.activeCode}`) || null;
       }
+
+      // Initial tab routing
       switchTab(state.currentTab);
       loadTableData();
 
+      // Background Real-Time Polling for Spectator/Live View (every 4s)
       state.pollingInterval = setInterval(() => {
+        // Poll only if active on table tab and no modal is open
         const isAnyModalOpen = document.querySelector('.fixed.inset-0:not(.hidden)');
         if (state.currentTab === 'table' && !isAnyModalOpen) {
           loadTableData(true);
