@@ -934,11 +934,19 @@
 
       try {
         const res = await fetch(url, { ...options, headers });
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('API não conectada ou retornou HTML. Conecte sua VPS no ícone de servidor (topo da tela).');
+        }
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Erro na requisição');
         return data;
       } catch (err) {
-        showToast(err.message, 'error');
+        let msg = err.message || 'Erro na conexão com o servidor';
+        if (msg.includes('Unexpected token') || msg.includes('is not valid JSON')) {
+          msg = 'API não conectada. Configure a URL da sua VPS no ícone de servidor (topo).';
+        }
+        showToast(msg, 'error');
         throw err;
       }
     }
